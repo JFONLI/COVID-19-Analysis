@@ -1,0 +1,81 @@
+---
+title: "Untitled"
+author: "Yen-Fong Li"
+date: "2022-12-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(maps)
+library(mapproj)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+counties <- readRDS("www/data/counties.RDS")
+counties$name %>% unique
+state <- separate(counties, name, into = c("State", "County"), sep = ",")
+state$State %>% unique()
+?separate
+white <- counties$white
+white
+var <- pmax(white, 0)
+var <- pmin(white, 100)
+
+percents <- as.integer(cut(var, 100, include.lowest = TRUE, ordered = TRUE))
+white
+percents
+
+?map
+
+```
+
+
+
+```{r}
+library(shiny)
+library(maps)
+library(mapproj)
+shades <- colorRampPalette(c("white", "darkgreen"))(100)
+
+fills <- shades[percents]
+fills
+```
+
+```{r}
+map("county", fill = TRUE, col = fills, resolution = 0, lty =0,
+    projection = "polyconic", myborder = 0, mar = c(0,0,0,0))
+
+map("state", col = "white", fill = FALSE, add = TRUE,
+    lty = 1, lwd = 1, projection = "polyconic", 
+    myborder = 0, mar = c(0,0,0,0))
+
+map("usa")
+?map
+```
+
+```{r}
+counties <- readRDS("www/data/counties.RDS")
+
+```
+

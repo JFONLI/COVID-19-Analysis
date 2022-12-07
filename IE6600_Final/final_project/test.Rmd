@@ -16,6 +16,7 @@ library(shiny)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
+library(lubridate)
 ```
 
 #Dataset 1
@@ -29,6 +30,8 @@ count_death_cleaned_visual_2 <- readRDS("www/data/count_death_cleaned_visual_2.R
 count_death_cleaned_model
 count_death_cleaned_visual_1
 count_death_cleaned_visual_2
+
+count_death_cleaned_visual_2$disease_type %>% unique()
 ```
 
 ## Correlation Map
@@ -55,6 +58,28 @@ corrplot(correlation)
 
 ## Bar Chart
 ```{r}
+count_death_cleaned_visual_2
+count_death_bar <- count_death_cleaned_visual_2
+count_death_bar <- filter(count_death_bar, sex == "male")
+count_death_bar$sex %>% unique()
+count_death_bar
+ggplot(count_death_bar) +
+  geom_col(aes(y = reorder(disease_type, death_by_disease), x = death_by_disease, fill = age_group))
+
+count_death_bar$percents <- count_death_bar$death_by_disease / count_death_bar$cause_all
+
+count_death_bar <- count_death_bar %>% group_by(disease_type) %>% summarise(total_counts = sum(death_by_disease),
+                                                         all_causes = cause_all)
+count_death_bar$all_causes <- sum(count_death_bar$all_causes)
+count_death_bar <- count_death_bar %>% unique()
+count_death_bar$percents <- count_death_bar$total_counts / count_death_bar$all_causes * 100
+count_death_bar$sum_of_diseases <- sum(count_death_bar$total_counts)
+count_death_bar$percents_100 <- count_death_bar$total_counts / count_death_bar$sum_of_diseases * 100
+
+ggplot(count_death_bar) +
+  #geom_col(aes(x = disease_type, y = percents)) +
+  geom_col(aes(x = disease_type, y = percents_100))
+
 
 ```
 
@@ -101,11 +126,57 @@ maps::map("state", fill = TRUE, col = fills)
 
 ## Bar Chart
 ```{r}
+condition_covi_cleaned
+bar_chart <- condition_covi_cleaned
+
+bar_chart <- bar_chart %>% filter(state == "Alabama" & group == "By Total" & !age_group %in% c("Not stated", "All Ages"))
+
+bar_chart$covi_death[is.na(bar_chart$covi_death)] <- 0
+bar_chart
+
+
+ggplot(bar_chart) +
+  geom_col(aes(x = covi_death, y = condition_group, fill = age_group), position = "fill")
+
+bar_chart_2 <- condition_covi_cleaned
+bar_chart_2 <- bar_chart_2 %>% filter(age_group == "All Ages" & group == "By Total" & state != "United States")
+bar_chart_2 <- bar_chart_2 %>% filter(state == "Alabama")
+bar_chart_2$covi_death[is.na(bar_chart_2$covi_death)] <- 0
+bar_chart_2$total_deaths <- sum(bar_chart_2$covi_death)
+bar_chart_2 <- bar_chart_2 %>% group_by(condition_group, total_deaths) %>% summarise(deaths = sum(covi_death))
+bar_chart_2$percents_100 <- bar_chart_2$deaths / bar_chart_2$total_deaths * 100
+
+
+ggplot(bar_chart_2) +
+  geom_col(aes(x = percents_100, y = condition_group))
 
 ```
 
 ## Time Series
 ```{r}
+condition_covi_cleaned
+time_series <- condition_covi_cleaned
+time_series <- time_series[,-11]
+time_series <- time_series %>% filter(group == "By Month")
+time_series <- time_series %>% mutate("date" = make_date(year = year, month = month))
+time_series$state %>% unique()
+time_series
+time_series <- time_series %>% filter(state == "Alabama" & age_group == "35-44")
+time_series
+
+# time_series$covi_death[is.na(time_series$covi_death)] <- 0
+time_series <- time_series %>% drop_na()
+# time_series %>% group_by(date, condition) %>% mutate(deaths = sum(covi_death))
+time_series <- time_series %>% group_by(date, condition_group) %>% summarise(deaths = sum(covi_death))
+
+time_series
+
+library(plotly)
+
+p <- ggplot(time_series) +
+  geom_line(aes(x = date, y = deaths, color = condition_group), size = 2)
+
+ggplotly(p)
 
 ```
 
@@ -130,7 +201,7 @@ temp <- covi_data_cleaned_model %>% filter(tolower(covi_data_cleaned_model$state
 temp$state %>% unique()
 temp <- temp %>% group_by(date, state) %>% summarise(total_cases <- sum(tot_cases),
                                       new_case <- sum(new_case))
-colnames(temp) <- c("state", "date", "total_cases", "new_cases")
+colnames(temp) <- c("date", "state", "total_cases", "new_cases")
 temp
 ```
 
@@ -138,7 +209,21 @@ temp
 
 ## Map
 ```{r}
-temp
+covi_data_cleaned_visual
+map <- covi_data_cleaned_visual
+map
+# map <- map %>% filter(tolower(state) %in% states)
+map <- map %>% filter(number_type == "tot_cases")
+# map %>% filter(date > as.Date("2020-01-22"), date < as.Date("2020-01-27"))
+
+map <- map %>% group_by(state) %>% summarise(total_cases = sum(number_value))
+map
+
+install.packages("usmap")
+library(usmap)
+
+plot_usmap(data = map, values = "total_cases", color = "red")
+
 ```
 
 ## Time Series

@@ -9,75 +9,18 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
 ```{r cars}
 library(maps)
 library(mapproj)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-
-```{r}
-counties <- readRDS("www/data/counties.RDS")
-counties$name %>% unique
-state <- separate(counties, name, into = c("State", "County"), sep = ",")
-state$State %>% unique()
-
-?separate
-counties
-counties$white
-white <- counties$white
-white
-var <- pmax(white, 0)
-var <- pmin(white, 100)
-
-percents <- as.integer(cut(var, 100, include.lowest = TRUE, ordered = TRUE))
-white
-percents
-
-?map
-
-```
-
-
-
-```{r}
 library(shiny)
-library(maps)
-library(mapproj)
-shades <- colorRampPalette(c("white", "darkgreen"))(100)
-
-fills <- shades[percents]
-fills
-```
-
-```{r}
-map("county", fill = TRUE, col = fills, resolution = 0, lty =0,
-    projection = "polyconic", myborder = 0, mar = c(0,0,0,0))
-
-map("state", col = "white", fill = FALSE, add = TRUE,
-    lty = 1, lwd = 1, projection = "polyconic", 
-    myborder = 0, mar = c(0,0,0,0))
-
-map("usa")
-?map
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
 ```
 
 #Dataset 1
+
+## Import Data
 ```{r}
 count_death_cleaned_model <- readRDS("www/data/count_death_cleaned_model.RDS")
 count_death_cleaned_visual_1 <- readRDS("www/data/count_death_cleaned_visual_1.RDS")
@@ -86,7 +29,10 @@ count_death_cleaned_visual_2 <- readRDS("www/data/count_death_cleaned_visual_2.R
 count_death_cleaned_model
 count_death_cleaned_visual_1
 count_death_cleaned_visual_2
+```
 
+## Correlation Map
+```{r}
 diseases <- colnames(count_death_cleaned_model)[c(8,9,12:23)]
 diseases
 rename_diseases <- c("All Causes", "Natural Causes", "Septicemia", "Maligant neoplasms", "Diabetes mellitus", "Alzheimer disease",
@@ -103,67 +49,27 @@ library(corrplot)
 
 correlation <- cor(cor_count_death)
 corrplot(correlation)
-
-
-mtcars
-cor_count_death
-count_death_cleaned_model
-count_death_cleaned_visual_2
-
-M = cor(mtcars)
-corrplot(M, method = 'number') # colorful number
-
+# corrplot(correlation, method="circle", type='upper', tl.cex=0.7, tl.col = 'black')
 ```
 
+
+## Bar Chart
 ```{r}
-library(corrplot)
 
-# setwd("C:/Users/sandy/Documents/Northeastern_Grad studies/IE 6600/Data")
-Happiness <- read.csv("World Happiness Data.csv")
-
-#Rename column names
-Happiness <- Happiness %>% 
-  rename(Economy_GDP_per_capita = Economy..GDP.per.Capita., 
-         Social_support = Family..Social.Support., 
-         Healthy_life_expectancy = Health..Life.Expectancy., 
-         Perceptions_of_corruption = Trust..Government.Corruption.,
-         Happiness_Rank = Happiness.Rank,
-         Happiness_Score = Happiness.Score) %>% filter(Region != "-")
-
-#Rename column values
-Happiness$Region[Happiness$Region == "South Asia"] <- "Southern Asia"
-Happiness$Region[Happiness$Region == "Southeast Asia"] <- "Southeastern Asia"
-Happiness$Region[Happiness$Region == "North America and ANZ"] <- "North America"
-Happiness$Region[Happiness$Region == "East Asia"] <- "Eastern Asia"
-Happiness$Region[Happiness$Region == "Middle East and North Africa"] <- "Middle East and Northern Africa"
-
-
-#Convert data types into numeric 
-Happiness[5:11] <- lapply(Happiness[5:11], as.numeric)
-
-colnames(Happiness)
-
-str(Happiness)
-
-#Select required columns 
-Happiness_New <- Happiness[, c("Happiness_Score", "Economy_GDP_per_capita", "Social_support", "Healthy_life_expectancy",
-                         "Freedom", "Perceptions_of_corruption", "Generosity"
-                         )]
-
-str(Happiness_New)
-
-#Plot correlation matrix 
-correlation <- cor(Happiness_New, use = "complete.obs") #creating correlation matrix
-corrplot(correlation, method="circle", type='upper', tl.cex=0.7, tl.col = 'black')
 ```
 
 
+# Dataset 2 
+## Import Dataset
 ```{r}
 condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.RDS")
 condition_covi_cleaned
+```
 
 
-temp <- condition_covi_cleaned %>% filter(group == "By Total" & !state %in% c("United States", "Alaska", "Hawaii", "New York City", "Puerto Rico"))
+```{r}
+remove_state <- c("United States", "Alaska", "American Samoa", "Hawaii", "New York City", "Puerto Rico")
+temp <- condition_covi_cleaned %>% filter(group == "By Total" & !state %in% remove_state)
 temp <- temp %>% filter(condition_group == "Respiratory diseases" & age_group == "All Ages")
 temp
 temp <- temp %>% group_by(state) %>% summarise(deathes = sum(covi_death)) 
@@ -177,6 +83,7 @@ temp$state
 shades <- colorRampPalette(c("darkgreen", "white"))(53)
 shades
 fills <- shades[temp$rank]
+fills
 #  [1] "alabama"              "arizona"              "arkansas"             "california"           "colorado"            
 #  [6] "connecticut"          "delaware"             "district of columbia" "florida"              "georgia"             
 # [11] "idaho"                "illinois"             "indiana"              "iowa"                 "kansas"              
@@ -189,25 +96,91 @@ fills <- shades[temp$rank]
 # [46] "washington"           "west virginia"        "wisconsin"            "wyoming"           
 # fills[4] = "black"
 
-map("state", fill = TRUE, col = fills)
+maps::map("state", fill = TRUE, col = fills)
+```
+
+## Bar Chart
+```{r}
 
 ```
 
-
+## Time Series
 ```{r}
-devtools::install_github("albersusa")
-library("albersusa")
-suppressPackageStartupMessages(library(plotly))
-usa <- albersusa::usa_sf("laea")
-usd <- crosstalk::SharedData$new(usa)
-p <- ggplot(usd) + geom_sf(aes(fill = pop_2010))
 
-ggplotly(p) %>%
-  highlight(
-    "plotly_hover",
-    selected = attrs_selected(line = list(color = "black"))
-) %>%
-  widgetframe::frameWidget()
+```
+
+# Dataset 3
+## Import Dataset
+```{r}
+covi_data_cleaned_model <- readRDS("www/data/covi_data_cleaned_model.RDS")
+covi_data_cleaned_visual <- readRDS("www/data/covi_data_cleaned_visual.RDS")
+covi_data_cleaned_model
+covi_data_cleaned_visual
+```
+## Clear Data
+clean unused states
+```{r}
+states <- c("alabama", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "district of columbia", 
+            "florida", "georgia", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
+            "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska",
+            "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
+            "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "washington",
+            "west virginia", "wisconsin", "wyoming")
+temp <- covi_data_cleaned_model %>% filter(tolower(covi_data_cleaned_model$state) %in% states)
+temp$state %>% unique()
+temp <- temp %>% group_by(date, state) %>% summarise(total_cases <- sum(tot_cases),
+                                      new_case <- sum(new_case))
+colnames(temp) <- c("state", "date", "total_cases", "new_cases")
+temp
+```
+
+
+
+## Map
+```{r}
+temp
+```
+
+## Time Series
+```{r}
+states <- c("alabama", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "district of columbia", 
+            "florida", "georgia", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
+            "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska",
+            "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
+            "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "washington",
+            "west virginia", "wisconsin", "wyoming")
+states %>% length()
+#  [1] "alabama"              "arizona"              "arkansas"             "california"           "colorado"            
+#  [6] "connecticut"          "delaware"             "district of columbia" "florida"              "georgia"             
+# [11] "idaho"                "illinois"             "indiana"              "iowa"                 "kansas"              
+# [16] "kentucky"             "louisiana"            "maine"                "maryland"             "massachusetts"       
+# [21] "michigan"             "minnesota"            "mississippi"          "missouri"             "montana"             
+# [26] "nebraska"             "nevada"               "new hampshire"        "new jersey"           "new mexico"          
+# [31] "new york"             "north carolina"       "north dakota"         "ohio"                 "oklahoma"            
+# [36] "oregon"               "pennsylvania"         "rhode island"         "south carolina"       "south dakota"        
+# [41] "tennessee"            "texas"                "utah"                 "vermont"              "virginia"            
+# [46] "washington"           "west virginia"        "wisconsin"            "wyoming"     
+unique(covi_data_cleaned_model$state)
+covi_data_cleaned_model$state %>% unique()
+remove_state <- c("United States", "Alaska", "American Samoa", "Hawaii", "New York City", "Puerto Rico")
+tolower(covi_data_cleaned_model$state) %in% states
+temp <- covi_data_cleaned_model %>% filter(tolower(covi_data_cleaned_model$state) %in% states)
+temp$state %>% unique()
+temp
+
+ggplot(temp %>% filter(state == "Arizona"), aes(x = date)) +
+  geom_area(aes(y = tot_cases), color="blue", fill= "blue", size=1) +
+  geom_area(aes(y = new_case), color = "red", fill = "red", size = 1)
+temp
+
+temp <- temp %>% group_by(date) %>% summarise(total_cases <- sum(tot_cases),
+                                      new_case <- sum(new_case))
+colnames(temp) <- c("date", "total_cases", "new_cases")
+
+ggplot(temp, aes(x = date)) +
+  geom_area(aes(y = total_cases), color = "blue", fill = "blue", size = 1) +
+  geom_area(aes(y = new_cases), color = "red", fill = "red", size = 1)
+
 ```
 
 

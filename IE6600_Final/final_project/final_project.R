@@ -1,5 +1,3 @@
-
-
 # Load packages ----
 library(shiny)
 library(maps)

@@ -70,22 +70,42 @@ count_death_bar <- count_death_cleaned_visual_2
 count_death_bar <- filter(count_death_bar, sex == "male")
 count_death_bar$sex %>% unique()
 count_death_bar
-ggplot(count_death_bar) +
-  geom_col(aes(y = reorder(disease_type, death_by_disease), x = death_by_disease, fill = age_group))
+ggplot() +
+  geom_col(data = count_death_bar, aes(x = disease_type, death_by_disease, y = death_by_disease, fill = age_group), position = "fill")
 
-count_death_bar$percents <- count_death_bar$death_by_disease / count_death_bar$cause_all
+count_death_bar_1 <- count_death_bar
+# count_death_bar$percents <- count_death_bar$death_by_disease / count_death_bar$cause_all
 
 count_death_bar <- count_death_bar %>% group_by(disease_type) %>% summarise(total_counts = sum(death_by_disease),
                                                          all_causes = cause_all)
-count_death_bar$all_causes <- sum(count_death_bar$all_causes)
+# count_death_bar$all_causes <- sum(count_death_bar$all_causes)
 count_death_bar <- count_death_bar %>% unique()
-count_death_bar$percents <- count_death_bar$total_counts / count_death_bar$all_causes * 100
+# count_death_bar$percents <- count_death_bar$total_counts / count_death_bar$all_causes * 100
 count_death_bar$sum_of_diseases <- sum(count_death_bar$total_counts)
-count_death_bar$percents_100 <- count_death_bar$total_counts / count_death_bar$sum_of_diseases * 100
+count_death_bar$percents_100 <- count_death_bar$total_counts / count_death_bar$sum_of_diseases
+
+p1 <- ggplot() +
+  geom_col(data = count_death_bar_1, aes(y = disease_type, death_by_disease, 
+                                         x = death_by_disease, 
+                                         fill = age_group), position = "fill") +
+  theme(plot.background = element_blank())
+  
+p2 <- ggplot(count_death_bar) +
+  geom_col(aes(y = disease_type, x = percents_100)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        plot.background = element_blank()) +
+  scale_x_reverse()
+  
+count_death_bar
+count_death_bar_1
 
 ggplot(count_death_bar) +
   #geom_col(aes(x = disease_type, y = percents)) +
-  geom_col(aes(x = disease_type, y = percents_100))
+  geom_point(aes(x = disease_type, y = percents_100)) +
+  geom_line(aes(x = disease_type, y = percents_100))
 
 
 ```
@@ -151,6 +171,23 @@ plot_usmap(data = map, values = "total_cases", color = "red")
 
 ## Bar Chart
 ```{r}
+
+## Plot 1
+bar_chart_2 <- condition_covi_cleaned
+bar_chart_2 <- bar_chart_2 %>% filter(age_group == "All Ages" & group == "By Total" & state != "United States")
+bar_chart_2 <- bar_chart_2 %>% filter(state == "Alabama")
+bar_chart_2$covi_death[is.na(bar_chart_2$covi_death)] <- 0
+bar_chart_2$total_deaths <- sum(bar_chart_2$covi_death)
+bar_chart_2 <- bar_chart_2 %>% group_by(condition_group, total_deaths) %>% summarise(deaths = sum(covi_death))
+bar_chart_2$percents_100 <- bar_chart_2$deaths / bar_chart_2$total_deaths * 100
+
+
+ggplot(bar_chart_2) +
+  geom_col(aes(x = percents_100, y = condition_group)) +
+  scale_y_discrete(position = "right") +
+  scale_x_reverse
+
+## Plot 2
 condition_covi_cleaned
 bar_chart <- condition_covi_cleaned
 
@@ -162,18 +199,6 @@ bar_chart
 
 ggplot(bar_chart) +
   geom_col(aes(x = covi_death, y = condition_group, fill = age_group), position = "fill")
-
-bar_chart_2 <- condition_covi_cleaned
-bar_chart_2 <- bar_chart_2 %>% filter(age_group == "All Ages" & group == "By Total" & state != "United States")
-bar_chart_2 <- bar_chart_2 %>% filter(state == "Alabama")
-bar_chart_2$covi_death[is.na(bar_chart_2$covi_death)] <- 0
-bar_chart_2$total_deaths <- sum(bar_chart_2$covi_death)
-bar_chart_2 <- bar_chart_2 %>% group_by(condition_group, total_deaths) %>% summarise(deaths = sum(covi_death))
-bar_chart_2$percents_100 <- bar_chart_2$deaths / bar_chart_2$total_deaths * 100
-
-
-ggplot(bar_chart_2) +
-  geom_col(aes(x = percents_100, y = condition_group))
 ```
 
 ## Time Series

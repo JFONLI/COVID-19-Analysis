@@ -27,6 +27,8 @@ age_groups <- as.character(unique(condition_covi_cleaned$age_group)[c(1:8)])
 # Source helper functions -----
 ## Dataset 2
 source("www/functions/db2_map_plot.R")
+source("www/functions/db2_bar_1_fun.R")
+source("www/functions/db2_bar_2_fun.R")
 source("www/functions/db2_ts_fun.R")
 
 
@@ -57,6 +59,7 @@ ui <- dashboardPage(
     uiOutput("db2_map_age"),
 
     ## UI for Dataset 2 Bar
+    uiOutput("db2_bar_state"),
 
     ## UI for Dataset 2 Time Series
     uiOutput("db2_ts_date"),
@@ -79,6 +82,7 @@ ui <- dashboardPage(
   ),
   dashboardBody(
     tabItems(
+
       tabItem(tabName = "dataset1",
               tabBox(
                 id = "db1_box",
@@ -90,8 +94,14 @@ ui <- dashboardPage(
       tabItem(tabName = "dataset2",
               tabBox(
                 id = "db2_box",
+                width = 12,
                 tabPanel("Map", plotOutput("db2_map")),
-                tabPanel("Bar", plotOutput("db2_bar")),
+                # tabPanel("Bar", fluidRow(plotOutput("db2_bar_1"), plotOutput("db2_bar_2"))),
+                tabPanel("Bar", fluidRow(
+                  splitLayout(cellWidths = c("50%", "50%"), 
+                  plotOutput("db2_bar_1"), 
+                  plotOutput("db2_bar_2")))),
+                #tabPanel("Bar", plotOutput("db2_bar_2")),
                 tabPanel("Time", plotOutput("db2_ts"))
               )
       ),
@@ -114,10 +124,14 @@ server <- function(input, output) {
   
   observe({
     
+    
     # Dataset 2 Map
     values$db2_map_date <- input$db2_map_date_val
     values$db2_map_ages <- input$db2_map_age_val
     values$db2_map_condition_groups <- input$db2_map_cond_group_val
+    
+    # Dataset 2 Bar
+    values$db2_bar_state <- input$db2_bar_state_val
     
     # Dataset 2 Time Series
     values$db2_ts_date <- input$db2_ts_date_val
@@ -133,6 +147,22 @@ server <- function(input, output) {
       do.call(db2_map_plot, args)
     })
     
+    # Dataset 2 Bar Plot
+    output$db2_bar_1 <- renderPlot({
+      args <- list(condition_covi_cleaned %>% filter(group == "By Total" & 
+                                                       state != "United States"),
+                   values$db2_bar_state)
+      do.call(db2_bar_2_fun, args)
+    })
+    
+    output$db2_bar_2 <- renderPlot({
+      args <- list(condition_covi_cleaned %>% filter(group == "By Total" & 
+                                                       !age_group %in% c("Not stated", "All Ages")),
+                   values$db2_bar_state)
+      do.call(db2_bar_1_fun, args)
+    })
+    
+
     # Dataset 2 Time Series Plot
     output$db2_ts <- renderPlot({
       args <- list(condition_covi_cleaned[,-11] %>% filter(group == "By Month"),
@@ -145,9 +175,17 @@ server <- function(input, output) {
   })
   
   observeEvent(input$dataset,{
-    output$db1_bar_date <- NULL
-    output$db1_bar_sex <- NULL
-    output$db1_bar_race <- NULL
+    
+    if(input$dataset == "dataset1"){
+      observeEvent(input$db1_box, {
+        if(input$db1_box == "Bar"){
+          # TODO
+        }
+        if(input$db1_box == "CorMap"){
+          # TODO
+        }
+      })
+    }
   
     if(input$dataset == "dataset2"){
       
@@ -197,6 +235,36 @@ server <- function(input, output) {
           })
         }
         
+        if(input$db2_box == "Bar"){
+          output$db2_bar_state <- renderUI({
+            pickerInput(
+              "db2_bar_state_val",
+              "States",
+              choices = states,
+              multiple = TRUE,
+              selected = states,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select States",
+                # title = as.character(length(input$condition_group)),
+                header = "States"
+              ),
+            )
+          })
+          # output$db2_bar_sex <- renderUI({
+          #   selectInput(
+          #     "db2_bar_sex_val",
+          #     "Choose Sex",
+          #     choices = c(
+          #       "ALL",
+          #       "Male",
+          #       "Female"
+          #     ),
+          #     selected = "ALL"
+          #   )
+          # })
+        }
+        
         if(input$db2_box == "Time"){
           output$db2_ts_date <- renderUI({
             sliderInput(
@@ -240,6 +308,17 @@ server <- function(input, output) {
               ),
             )
           })
+        }
+      })
+    }
+    
+    if(input$dataset == "dataset3"){
+      observeEvent(input$db3_box, {
+        if(input$db3_box == "Map"){
+          # TODO
+        }
+        if(input$db3_box == "Time"){
+          # TODO
         }
       })
     }

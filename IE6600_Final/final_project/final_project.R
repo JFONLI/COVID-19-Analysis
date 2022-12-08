@@ -1,95 +1,156 @@
 # Load packages ----
-library(shiny)
 library(maps)
 library(mapproj)
+library(shiny)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(usmap)
 
 # Load data ----
-counties <- readRDS("www/data/counties.RDS")
+
+## Dataset 2
+condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.rdS")
+condition_groups <- as.character(unique(condition_covi_cleaned$condition_group))
+age_groups <- as.character(unique(condition_covi_cleaned$age_group)[c(1:8)])
 
 # Source helper functions -----
-source("www/functions/percentMap.R")
+source("www/functions/db2_map_plot.R")
 
 
 # User interface ----
-ui <- fluidPage(titlePanel("exercise-4-rds"),
-                
-                sidebarLayout(
-                  sidebarPanel(
-                    helpText("Create demographic maps with
-                             information from the 2010 US Census."),
-                    
-                    selectInput(
-                      "var",
-                      label = "Choose a variable to display",
-                      choices = c(
-                        "Percent White",
-                        "Percent Black",
-                        "Percent Hispanic",
-                        "Percent Asian"
-                      ),
-                      selected = "Percent White"
-                    ),
-                    
-                    sliderInput(
-                      "range",
-                      label = "Range of interest:",
-                      min = 0,
-                      max = 100,
-                      value = c(0, 100)
-                    )
-                    ),
-                  
-                  mainPanel(plotOutput("map"))
-                ))
+ui <- fluidPage(
+  titlePanel("IE6600 Final Project"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = "dataset",
+        label = "Default Dataset List",
+        choices = c(choose = "List of datasets",
+                    "Dataset1", "Dataset2", "Dataset3")
+      ),
+      
+      uiOutput("time"),
+      uiOutput("cond_group"),
+      uiOutput("age"),
+      
+      
+      #Debug
+      verbatimTextOutput("aaa")
+    ),
+    mainPanel(
+      tabsetPanel(
+        tabPanel("map", plotOutput("map"))
+      )
+    )
+  )
+  
+)
 
 # Server logic ----
 server <- function(input, output) {
-  output$map <- renderPlot({
-    data <- switch(
-      input$var,
-      "Percent White" = counties$white,
-      "Percent Black" = counties$black,
-      "Percent Hispanic" = counties$hispanic,
-      "Percent Asian" = counties$asian
-    )
-
-    color <- switch(
-      input$var,
-      "Percent White" = "darkgreen",
-      "Percent Black" = "black",
-      "Percent Hispanic" = "darkorange",
-      "Percent Asian" = "darkviolet"
-    )
-
-    legend <- switch(
-      input$var,
-      "Percent White" = "% White",
-      "Percent Black" = "% Black",
-      "Percent Hispanic" = "% Hispanic",
-      "Percent Asian" = "% Asian"
-    )
-
-    percent_map(data, color, legend, input$range[1], input$range[2])
+  values <- reactiveValues(
+    dataset = NULL,
+    db2_date = NULL,
+    db2_ages = NULL,
+    db2_condition_groups = NULL,
+  )
+  
+  
+  
+  observeEvent(input$dataset, {
+    if(!NA %in% match(input$dataset, c("Dataset1", "Dataset2", "Dataset3"))){
+      if(input$dataset == "Dataset1"){
+        dataset = "Dataset1"
+      }
+      if(input$dataset == "Dataset2"){
+        values$dataset = "Dataset2"
+        values$cgs <- condition_covi_cleaned$condition_groups %>% unique()
+        output$time <- renderUI({
+          sliderInput(
+            "date",
+            "Dates",
+            min = as.Date("2020-01-01", "%Y-%m-%d"),
+            max = as.Date("2022-10-31", "%Y-%m-%d"),
+            step = 30,
+            value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
+            timeFormat = "%b %Y",
+          )
+          
+        })
+        output$cond_group <- renderUI({
+          pickerInput(
+            "condition_group",
+            "Condition Groups",
+            choices = condition_groups,
+            multiple = TRUE,
+            selected = condition_groups,
+            options = pickerOptions(
+              actionsBox = TRUE,
+              title = "Please select conditon groups",
+              # title = as.character(length(input$condition_group)),
+              header = "Condition Groups"
+            ),
+          )
+        })
+        output$age <- renderUI({
+          pickerInput(
+            "age_group",
+            "Age Groups",
+            choices = age_groups,
+            multiple = TRUE,
+            selected = age_groups,
+            options = pickerOptions(
+              actionsBox = TRUE,
+              title = "Please select age groups",
+              # title = as.character(length(input$condition_group)),
+              header = "Age Groups"
+            ),
+          )
+        })
+        
+        
+        
+      }
+    }
   })
+  
+  observe({
+    
+    values$db2_date <- input$date
+    values$db2_ages <- input$age_group
+    values$db2_condition_groups <- input$condition_group
+    
+    if(!is_null(values$dataset)){
+      output$map <- renderPlot({
+        args <- list(condition_covi_cleaned %>% filter(group == "By Month"),
+                     values$db2_date,
+                     values$db2_ages,
+                     values$db2_condition_groups)
 
+        do.call(db2_map_plot, args)
+
+      })
+    }
+    
+  
+  })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  output$aaa <- renderPrint({
+    values$db2_date[1] %>% class()
+  })
 }
 
-
-# More brief ----
-server <- function(input, output) {
-  output$map <- renderPlot({
-    args <- switch(input$var,
-                   "Percent White" = list(counties$white, "darkgreen", "% White"),
-                   "Percent Black" = list(counties$black, "black", "% Black"),
-                   "Percent Hispanic" = list(counties$hispanic, "darkorange", "% Hispanic"),
-                   "Percent Asian" = list(counties$asian, "darkviolet", "% Asian"))
-
-    args$min <- input$range[1]
-    args$max <- input$range[2]
-
-    do.call(percent_map, args)
-  })
-}
 
 # Run app ----
 shinyApp(ui, server)

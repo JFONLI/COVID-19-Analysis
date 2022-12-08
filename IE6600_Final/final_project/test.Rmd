@@ -9,6 +9,11 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+install.packages("multiInput")
+```
+
+
 ```{r cars}
 library(maps)
 library(mapproj)
@@ -17,6 +22,7 @@ library(dplyr)
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
+library(usmap)
 ```
 
 #Dataset 1
@@ -91,7 +97,7 @@ condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.RDS")
 condition_covi_cleaned
 ```
 
-
+# Map 
 ```{r}
 remove_state <- c("United States", "Alaska", "American Samoa", "Hawaii", "New York City", "Puerto Rico")
 temp <- condition_covi_cleaned %>% filter(group == "By Total" & !state %in% remove_state)
@@ -109,20 +115,38 @@ shades <- colorRampPalette(c("darkgreen", "white"))(53)
 shades
 fills <- shades[temp$rank]
 fills
-#  [1] "alabama"              "arizona"              "arkansas"             "california"           "colorado"            
-#  [6] "connecticut"          "delaware"             "district of columbia" "florida"              "georgia"             
-# [11] "idaho"                "illinois"             "indiana"              "iowa"                 "kansas"              
-# [16] "kentucky"             "louisiana"            "maine"                "maryland"             "massachusetts"       
-# [21] "michigan"             "minnesota"            "mississippi"          "missouri"             "montana"             
-# [26] "nebraska"             "nevada"               "new hampshire"        "new jersey"           "new mexico"          
-# [31] "new york"             "north carolina"       "north dakota"         "ohio"                 "oklahoma"            
-# [36] "oregon"               "pennsylvania"         "rhode island"         "south carolina"       "south dakota"        
-# [41] "tennessee"            "texas"                "utah"                 "vermont"              "virginia"            
-# [46] "washington"           "west virginia"        "wisconsin"            "wyoming"           
-# fills[4] = "black"
 
 maps::map("state", fill = TRUE, col = fills)
 ```
+# Map 2
+```{r}
+map_2 <- condition_covi_cleaned
+map_2
+map_2 <- map_2 %>% filter(group == "By Month")
+map_2 <- map_2 %>% mutate("date" = make_date(year = year, month = month))
+map_2$covi_death[is.na(map_2$covi_death)] <- 0
+map_2 <- map_2 %>% group_by(state) %>% summarise(deaths = sum(covi_death))
+map_2
+
+plot_usmap(data = map_2, values = "deaths", color = "red")
+
+covi_data_cleaned_visual
+map <- covi_data_cleaned_visual
+map
+# map <- map %>% filter(tolower(state) %in% states)
+map <- map %>% filter(number_type == "tot_cases")
+# map %>% filter(date > as.Date("2020-01-22"), date < as.Date("2020-01-27"))
+
+map <- map %>% group_by(state) %>% summarise(total_cases = sum(number_value))
+map
+
+
+?scale_fill_continuous
+plot_usmap(data = map, values = "total_cases", color = "red")
+
+```
+
+
 
 ## Bar Chart
 ```{r}

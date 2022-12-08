@@ -14,12 +14,12 @@ percent_map <- function(var, color, legend.title, min = 0, max = 100) {
   fills <- shades[percents]
 
   # plot choropleth map
-  map("county", fill = TRUE, col = fills, 
+  maps::map("county", fill = TRUE, col = fills, 
     resolution = 0, lty = 0, projection = "polyconic", 
     myborder = 0, mar = c(0,0,0,0))
   
   # overlay state borders
-  map("state", col = "white", fill = FALSE, add = TRUE,
+  maps::map("state", col = "white", fill = FALSE, add = TRUE,
     lty = 1, lwd = 1, projection = "polyconic", 
     myborder = 0, mar = c(0,0,0,0))
   

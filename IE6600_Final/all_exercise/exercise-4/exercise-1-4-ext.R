@@ -5,6 +5,7 @@ library(shiny)
 library(maps)
 library(mapproj)
 
+
 # Load data ----
 counties <- readRDS("www/data/counties.RDS")
 
@@ -38,7 +39,8 @@ ui <- fluidPage(titlePanel("exercise-4-rds"),
                       min = 0,
                       max = 100,
                       value = c(0, 100)
-                    )
+                    ),
+                    verbatimTextOutput("aaa")
                     ),
                   
                   mainPanel(plotOutput("map"))
@@ -72,6 +74,10 @@ server <- function(input, output) {
     )
 
     percent_map(data, color, legend, input$range[1], input$range[2])
+  })
+  
+  output$aaa <- renderPrint({
+    counties
   })
 
 }

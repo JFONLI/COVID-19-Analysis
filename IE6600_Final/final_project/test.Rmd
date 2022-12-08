@@ -23,6 +23,7 @@ library(tidyverse)
 library(ggplot2)
 library(lubridate)
 library(usmap)
+library(plotly)
 ```
 
 #Dataset 1
@@ -94,7 +95,7 @@ ggplot(count_death_bar) +
 ## Import Dataset
 ```{r}
 condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.RDS")
-condition_covi_cleaned
+condition_covi_cleaned$state %>% unique()
 ```
 
 # Map 
@@ -173,18 +174,16 @@ bar_chart_2$percents_100 <- bar_chart_2$deaths / bar_chart_2$total_deaths * 100
 
 ggplot(bar_chart_2) +
   geom_col(aes(x = percents_100, y = condition_group))
-
 ```
 
 ## Time Series
 ```{r}
 condition_covi_cleaned
 time_series <- condition_covi_cleaned
-time_series <- time_series[,-11]
-time_series <- time_series %>% filter(group == "By Month")
+time_series <- time_series[,-11] %>% filter(group == "By Month")
+# time_series <- time_series[,-11]
+# time_series <- time_series %>% filter(group == "By Month")
 time_series <- time_series %>% mutate("date" = make_date(year = year, month = month))
-time_series$state %>% unique()
-time_series
 time_series <- time_series %>% filter(state == "Alabama" & age_group == "35-44")
 time_series
 
@@ -195,7 +194,7 @@ time_series <- time_series %>% group_by(date, condition_group) %>% summarise(dea
 
 time_series
 
-library(plotly)
+
 
 p <- ggplot(time_series) +
   geom_line(aes(x = date, y = deaths, color = condition_group), size = 2)

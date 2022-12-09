@@ -41,6 +41,8 @@ covi_data_cleaned_visual <- readRDS("www/data/covi_data_cleaned_visual.RDS")
 
 # Source helper functions -----
 source("www/functions/db1_cor_fun.R")
+source("www/functions/db1_bar_1_fun.R")
+source("www/functions/db1_bar_2_fun.R")
 
 ## Dataset 2
 source("www/functions/db2_map_plot.R")
@@ -108,6 +110,7 @@ ui <- dashboardPage(
       tabItem(tabName = "dataset1",
               tabBox(
                 id = "db1_box",
+                width = 12,
                 tabPanel("Bar", fluidRow(
                   splitLayout(cellWidths = c("50%", "50%"), 
                               plotOutput("db1_bar_1"), 
@@ -133,6 +136,7 @@ ui <- dashboardPage(
       tabItem(tabName = "dataset3",
               tabBox(
                 id = "db3_box",
+                width = 12,
                 tabPanel("Map", plotOutput("db3_map")),
                 tabPanel("Time", plotOutput("db3_ts"))
               )
@@ -149,7 +153,9 @@ server <- function(input, output) {
   
   observe({
     # Dataset 1 Bar Plot
-    
+    values$db1_bar_date <- input$db1_bar_date_val
+    values$db1_bar_sex <- input$db1_bar_sex_val
+    values$db1_bar_race <- input$db1_bar_race_val
     
     # Dataset 1 Correlation Map
     values$db1_cor_sex <- input$db1_cor_sex_val
@@ -178,6 +184,27 @@ server <- function(input, output) {
     
     
     #---------------------------------------------------------------
+    
+    # Dataset 1 Bar Chart
+    output$db1_bar_1 <- renderPlot({
+      args <- list(
+        count_death_cleaned_visual_2,
+        values$db1_bar_date,
+        values$db1_bar_sex,
+        values$db1_bar_race
+      )
+      do.call(db1_bar_1_fun, args)
+    })
+    
+    output$db1_bar_2 <- renderPlot({
+      args <- list(
+        count_death_cleaned_visual_2,
+        values$db1_bar_date,
+        values$db1_bar_sex,
+        values$db1_bar_race
+      )
+      do.call(db1_bar_2_fun, args)
+    })
     
     # Dataset 1 Correlation Map Plot
     output$db1_cor <- renderPlot({
@@ -252,7 +279,50 @@ server <- function(input, output) {
       observeEvent(input$db1_box, {
         if(input$db1_box == "Bar"){
           # TODO
-          
+          output$db1_bar_date <- renderUI({
+            sliderInput(
+              "db1_bar_date_val",
+              "Dates",
+              min = as.Date("2019-07-01", "%Y-%m-%d"),
+              max = as.Date("2021-09-01", "%Y-%m-%d"),
+              step = 30,
+              value = c(as.Date("2019-07-01", "%Y-%m-%d"), as.Date("2021-09-01", "%Y-%m-%d")),
+              timeFormat = "%b %Y"
+            )
+            
+          })
+          output$db1_bar_sex <- renderUI({
+            pickerInput(
+              "db1_bar_sex_val",
+              "Choose Sex",
+              choices = c(
+                "male",
+                "female"
+              ),
+              selected = c("male", "female"),
+              multiple = TRUE,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Select Sex",
+                headr = "Sex"
+              )
+            )
+          })
+          output$db1_bar_race <- renderUI({
+            pickerInput(
+              "db1_bar_race_val",
+              "Races",
+              choices = races,
+              multiple = TRUE,
+              selected = races,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select Races",
+                # title = as.character(length(input$condition_group)),
+                header = "Races"
+              ),
+            )
+          })
         }
         if(input$db1_box == "CorMap"){
           # TODO
@@ -472,7 +542,7 @@ server <- function(input, output) {
   
   output$aaa <- renderPrint({
     # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
-    values$db1_cor_sex
+    values$db1_bar_sex
   })
   
 }

@@ -24,6 +24,7 @@ library(ggplot2)
 library(lubridate)
 library(usmap)
 library(plotly)
+library(corrplot)
 ```
 
 #Dataset 1
@@ -60,7 +61,7 @@ colnames(cor_count_death) <- rename_diseases
 cor_count_death
 
 # install.packages("corrplot")
-library(corrplot)
+
 
 correlation <- cor(cor_count_death)
 corrplot(correlation)
@@ -70,61 +71,67 @@ corrplot(correlation)
 
 ## Bar Chart
 ```{r}
-
-# Plot 2
-count_death_cleaned_visual_2
-count_death_bar <- count_death_cleaned_visual_2
-sexes <- c("female")
-count_death_bar <- filter(count_death_bar, sex %in% sexes)
-
-count_death_bar
-
-ggplot() +
-  geom_col(data = count_death_bar, aes(y = disease_type,x = death_by_disease, fill = age_group), position = "fill")
-
-
 # Plot 1
 # count_death_bar_1 <- count_death_bar
 # count_death_bar$percents <- count_death_bar$death_by_disease / count_death_bar$cause_all
 
-count_death_bar <- count_death_bar %>% group_by(disease_type) %>% summarise(
-  total_counts = sum(death_by_disease), all_causes = cause_all)
+# count_death_bar <- count_death_bar %>% group_by(disease_type) %>% summarise(
+#   total_counts = sum(death_by_disease), all_causes = cause_all)
 # count_death_bar$all_causes <- sum(count_death_bar$all_causes)
 # count_death_bar <- count_death_bar %>% unique()
 # count_death_bar$percents <- count_death_bar$total_counts / count_death_bar$all_causes * 100
-count_death_bar$sum_of_diseases <- sum(count_death_bar$total_counts)
-count_death_bar$percents_100 <- count_death_bar$total_counts / count_death_bar$sum_of_diseases
 
-ggplot(count_death_bar) +
-  geom_col(aes(y = disease_type, x = percents_100)) +
+
+# Plot 2
+count_death_cleaned_visual_2
+count_death_bar <- count_death_cleaned_visual_2
+count_death_bar <- filter(count_death_bar, sex %in% sexes)
+count_death_bar_2 <- count_death_bar
+
+# ggplot() +
+#   geom_col(data = count_death_bar, aes(y = disease_type,x = death_by_disease, fill = age_group), position = "fill")
+
+
+
+count_death_bar <- count_death_bar %>% group_by(disease_type) %>% summarise(
+  total_counts = sum(death_by_disease))
+count_death_bar
+
+count_death_bar$sum_of_diseases <- sum(count_death_bar$total_counts)
+count_death_bar
+count_death_bar$percents_100 <- round(count_death_bar$total_counts / count_death_bar$sum_of_diseases * 100, 1)
+count_death_bar <- count_death_bar %>% arrange(desc(percents_100))
+count_death_bar
+
+
+count_death_bar <- count_death_bar %>%  arrange(percents_100) %>% mutate(disease_type = factor(disease_type, levels = disease_type))
+count_death_bar
+disease_order <- count_death_bar$disease_type
+disease_order
+
+ggplot(count_death_bar, aes(y = disease_type, x = percents_100)) +
+  geom_col() +
+  geom_text(aes(label = paste(percents_100, "%"))) +
   scale_x_reverse() +
   scale_y_discrete(position = "right")
 
-# -----------------------------------
-p1 <- ggplot() +
-  geom_col(data = count_death_bar_1, aes(y = disease_type, death_by_disease, 
-                                         x = death_by_disease, 
-                                         fill = age_group), position = "fill") +
-  theme(plot.background = element_blank())
-  
-p2 <- ggplot(count_death_bar) +
-  geom_col(aes(x = disease_type, y = percents_100)) +
-  
-  theme(axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        plot.background = element_blank()) +
-  scale_x_reverse()
-  
-count_death_bar %>% arrange(desc(date_start))
-count_death_bar_1%>% arrange(desc(date_start))
-
-ggplot(count_death_bar) +
-  #geom_col(aes(x = disease_type, y = percents)) +
-  geom_point(aes(x = disease_type, y = percents_100)) +
-  geom_line(aes(x = disease_type, y = percents_100))
+count_death_bar_2$disease_type <- ordered(count_death_bar_2$disease_type, disease_order)
+count_death_bar_2
+ggplot() +
+  geom_col(data = count_death_bar_2, aes(y = disease_type,x = death_by_disease, fill = age_group), position = "fill")
+```
 
 
+
+```{r}
+sizes <- factor(c("Pencil", "brush", "pen"))
+sizes
+new <- c("Pencil", "brush", "pen")
+
+sizes <- ordered(sizes, levels = new)
+sizes
+#> [1] small  large  large  small  medium
+#> Levels: large medium small
 ```
 
 

@@ -1,6 +1,15 @@
 library(shiny)
 library(shinyWidgets)
 library(shinydashboard)
+library(maps)
+library(mapproj)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(usmap)
+library(plotly)
+library(corrplot)
 
 # Fixed variable
 # New York City

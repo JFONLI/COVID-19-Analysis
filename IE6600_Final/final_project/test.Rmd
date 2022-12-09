@@ -53,6 +53,7 @@ temp <- count_death_cleaned_model
 temp$race %>% unique()
 temp <- temp %>% filter(sex == "male")
 temp
+temp$year_death %>% unique
 cor_count_death <- temp[,diseases]
 cor_count_death
 colnames(cor_count_death) <- rename_diseases
@@ -181,6 +182,7 @@ map
 ?scale_fill_continuous
 plot_usmap(data = map, values = "total_cases", color = "red")
 
+as.Date("2020-10-01") == as.Date("2020-10")
 ```
 
 

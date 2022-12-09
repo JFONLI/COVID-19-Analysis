@@ -274,15 +274,54 @@ server <- function(input, output) {
   })
   
   observeEvent(input$dataset,{
+    output$db1_bar_date <- NULL
+    output$db1_bar_sex <- NULL
+    output$db1_bar_race <- NULL
+      
+    output$db1_cor_sex <- NULL
+    output$db1_cor_race <- NULL
     
+    output$db2_map_date <- NULL
+    output$db2_map_cond_group <- NULL
+    output$db2_map_age <- NULL
+    
+    output$db2_bar_state <- NULL
+    
+    output$db2_ts_date <- NULL
+    output$db2_ts_state <- NULL
+    output$db2_ts_age <- NULL
+    
+    output$db3_map_date <- NULL
+    
+    output$db3_ts_date <- NULL
+    output$db3_ts_state <- NULL
+    output$db3_ts_choice <- NULL
+      
     if(input$dataset == "dataset1"){
       observeEvent(input$db1_box, {
         if(input$db1_box == "Bar"){
-          # TODO
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_bar_state <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_map_date <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db1_bar_date <- renderUI({
             sliderInput(
               "db1_bar_date_val",
-              "Dates",
+              "Dates(db1_bar_date)",
               min = as.Date("2019-07-01", "%Y-%m-%d"),
               max = as.Date("2021-09-01", "%Y-%m-%d"),
               step = 30,
@@ -325,7 +364,25 @@ server <- function(input, output) {
           })
         }
         if(input$db1_box == "CorMap"){
-          # TODO
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_bar_state <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_map_date <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db1_cor_sex <- renderUI({
             pickerInput(
               "db1_cor_sex_val",
@@ -366,12 +423,30 @@ server <- function(input, output) {
       
       observeEvent(input$db2_box, {
         if(input$db2_box == "Map"){
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+
+          output$db2_bar_state <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_map_date <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db2_map_date <- renderUI({
             sliderInput(
               "db2_map_date_val",
-              "Dates",
+              "Dates(db2_map_date)",
               min = as.Date("2020-01-01", "%Y-%m-%d"),
-              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              max = as.Date("2022-10-01", "%Y-%m-%d"),
               step = 30,
               value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
               timeFormat = "%b %Y"
@@ -411,6 +486,26 @@ server <- function(input, output) {
         }
         
         if(input$db2_box == "Bar"){
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_map_date <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db2_bar_state <- renderUI({
             pickerInput(
               "db2_bar_state_val",
@@ -429,12 +524,30 @@ server <- function(input, output) {
         }
         
         if(input$db2_box == "Time"){
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_bar_state <- NULL
+          
+          output$db3_map_date <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db2_ts_date <- renderUI({
             sliderInput(
               "db2_ts_date_val",
-              "Dates",
+              "Dates(db2_ts_date)",
               min = as.Date("2020-01-01", "%Y-%m-%d"),
-              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              max = as.Date("2022-10-01", "%Y-%m-%d"),
               step = 30,
               value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
               timeFormat = "%b %Y",
@@ -478,12 +591,32 @@ server <- function(input, output) {
     if(input$dataset == "dataset3"){
       observeEvent(input$db3_box, {
         if(input$db3_box == "Map"){
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_bar_state <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_ts_date <- NULL
+          output$db3_ts_state <- NULL
+          output$db3_ts_choice <- NULL
           output$db3_map_date <- renderUI({
             sliderInput(
               "db3_map_date_val",
-              "Dates",
-              min = as.Date("2020-01-01", "%Y-%m-%d"),
-              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              "Dates(tb3_map_date)",
+              min = as.Date("2020-01-22", "%Y-%m-%d"),
+              max = as.Date("2022-10-18", "%Y-%m-%d"),
               step = 30,
               value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
               timeFormat = "%b %Y",
@@ -492,13 +625,31 @@ server <- function(input, output) {
           })
         }
         if(input$db3_box == "Time"){
-          # TODO
+          output$db1_bar_date <- NULL
+          output$db1_bar_sex <- NULL
+          output$db1_bar_race <- NULL
+          
+          output$db1_cor_sex <- NULL
+          output$db1_cor_race <- NULL
+          
+          output$db2_map_date <- NULL
+          output$db2_map_cond_group <- NULL
+          output$db2_map_age <- NULL
+          
+          output$db2_bar_state <- NULL
+          
+          output$db2_ts_date <- NULL
+          output$db2_ts_state <- NULL
+          output$db2_ts_age <- NULL
+          
+          output$db3_map_date <- NULL
+          
           output$db3_ts_date <- renderUI({
             sliderInput(
               "db3_ts_date_val",
-              "Dates",
-              min = as.Date("2020-01-01", "%Y-%m-%d"),
-              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              "Dates(db3_ts_date)",
+              min = as.Date("2020-01-22", "%Y-%m-%d"),
+              max = as.Date("2022-10-18", "%Y-%m-%d"),
               step = 30,
               value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
               timeFormat = "%b %Y",
@@ -540,10 +691,10 @@ server <- function(input, output) {
   
   
   
-  output$aaa <- renderPrint({
-    # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
-    values$db1_bar_sex
-  })
+  # output$aaa <- renderPrint({
+  #   # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
+  #   values$db1_bar_sex
+  # })
   
 }
 

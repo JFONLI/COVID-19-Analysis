@@ -23,6 +23,9 @@ condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.rdS")
 condition_groups <- as.character(unique(condition_covi_cleaned$condition_group))
 age_groups <- as.character(unique(condition_covi_cleaned$age_group)[c(1:8)])
 
+## Dataset 3
+covi_data_cleaned_model <- readRDS("www/data/covi_data_cleaned_model.RDS")
+covi_data_cleaned_visual <- readRDS("www/data/covi_data_cleaned_visual.RDS")
 
 # Source helper functions -----
 ## Dataset 2
@@ -30,6 +33,10 @@ source("www/functions/db2_map_plot.R")
 source("www/functions/db2_bar_1_fun.R")
 source("www/functions/db2_bar_2_fun.R")
 source("www/functions/db2_ts_fun.R")
+
+## Dataset 3
+source("www/functions/db3_map_fun.R")
+source("www/functions/db3_ts_fun.R")
 
 
 
@@ -73,6 +80,7 @@ ui <- dashboardPage(
     ## UI for Dataset 3 Time Series
     uiOutput("db3_ts_date"),
     uiOutput("db3_ts_state"),
+    uiOutput("db3_ts_choice"),
     
     
     
@@ -86,8 +94,11 @@ ui <- dashboardPage(
       tabItem(tabName = "dataset1",
               tabBox(
                 id = "db1_box",
-                tabPanel("Bar"),
-                tabPanel("CorMap")
+                tabPanel("Bar", fluidRow(
+                  splitLayout(cellWidths = c("50%", "50%"), 
+                              plotOutput("db1_bar_1"), 
+                              plotOutput("db1_bar_2")))),
+                tabPanel("CorMap", plotOutput("db1_cor"))
               )
       ),
       
@@ -108,8 +119,8 @@ ui <- dashboardPage(
       tabItem(tabName = "dataset3",
               tabBox(
                 id = "db3_box",
-                tabPanel("Map"),
-                tabPanel("Time")
+                tabPanel("Map", plotOutput("db3_map")),
+                tabPanel("Time", plotOutput("db3_ts"))
               )
       )
     )
@@ -138,6 +149,17 @@ server <- function(input, output) {
     values$db2_ts_state <- input$db2_ts_state_val
     values$db2_ts_age <- input$db2_ts_age_val
     
+    # Dataset 3 Map
+    values$db3_map_date <- input$db3_map_date_val
+    
+    # Dataset 3 Time Series
+    values$db3_ts_date <- input$db3_ts_date_val
+    values$db3_ts_state <- input$db3_ts_state_val
+    values$db3_ts_choice <- input$db3_ts_choice_val
+    
+    
+    #---------------------------------------------------------------
+    
     # Dataset 2 Map Plot
     output$db2_map <- renderPlot({
       args <- list(condition_covi_cleaned %>% filter(group == "By Month"),
@@ -154,7 +176,6 @@ server <- function(input, output) {
                    values$db2_bar_state)
       do.call(db2_bar_2_fun, args)
     })
-    
     output$db2_bar_2 <- renderPlot({
       args <- list(condition_covi_cleaned %>% filter(group == "By Total" & 
                                                        !age_group %in% c("Not stated", "All Ages")),
@@ -162,7 +183,6 @@ server <- function(input, output) {
       do.call(db2_bar_1_fun, args)
     })
     
-
     # Dataset 2 Time Series Plot
     output$db2_ts <- renderPlot({
       args <- list(condition_covi_cleaned[,-11] %>% filter(group == "By Month"),
@@ -170,6 +190,29 @@ server <- function(input, output) {
                    values$db2_ts_state,
                    values$db2_ts_age)
       do.call(db2_ts_fun, args)
+    })
+    
+    
+    # Dataset 3 Map Plot
+    output$db3_map <- renderPlot({
+      args <- list(
+        covi_data_cleaned_visual %>% filter(number_type == "tot_cases"),
+        values$db3_map_date
+      )
+      
+      do.call(db3_map_fun, args)
+    })
+    
+    # Dataset 3 Time Series Plot
+    output$db3_ts <- renderPlot({
+      args <- list(
+        covi_data_cleaned_model %>% filter(!state %in% c("United States", "New York City", "Puerto Rico")),
+        values$db3_ts_date,
+        values$db3_ts_state,
+        values$db3_ts_choice
+      )
+      
+      do.call(db3_ts_fun, args)
     })
     
   })
@@ -315,10 +358,59 @@ server <- function(input, output) {
     if(input$dataset == "dataset3"){
       observeEvent(input$db3_box, {
         if(input$db3_box == "Map"){
-          # TODO
+          output$db3_map_date <- renderUI({
+            sliderInput(
+              "db3_map_date_val",
+              "Dates",
+              min = as.Date("2020-01-01", "%Y-%m-%d"),
+              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              step = 30,
+              value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
+              timeFormat = "%b %Y",
+            )
+            
+          })
         }
         if(input$db3_box == "Time"){
           # TODO
+          output$db3_ts_date <- renderUI({
+            sliderInput(
+              "db3_ts_date_val",
+              "Dates",
+              min = as.Date("2020-01-01", "%Y-%m-%d"),
+              max = as.Date("2022-10-31", "%Y-%m-%d"),
+              step = 30,
+              value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-31", "%Y-%m-%d")),
+              timeFormat = "%b %Y",
+            )
+            
+          })
+          output$db3_ts_state <- renderUI({
+            pickerInput(
+              "db3_ts_state_val",
+              "States",
+              choices = states,
+              multiple = TRUE,
+              selected = states,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select States",
+                # title = as.character(length(input$condition_group)),
+                header = "States"
+              ),
+            )
+          })
+          output$db3_ts_choice <- renderUI({
+            selectInput(
+              "db3_ts_choice_val",
+              "Choices: ",
+              choices = c(
+                "Cases",
+                "Deaths"
+              ),
+              selected = "ALL"
+            )
+          })
         }
       })
     }
@@ -329,7 +421,8 @@ server <- function(input, output) {
   
   
   output$aaa <- renderPrint({
-    input$db2_box
+    # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
+    values$db3_ts_choice
   })
   
 }

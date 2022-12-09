@@ -267,7 +267,6 @@ map <- map %>% filter(number_type == "tot_cases")
 map <- map %>% group_by(state) %>% summarise(total_cases = sum(number_value))
 map
 
-install.packages("usmap")
 library(usmap)
 
 plot_usmap(data = map, values = "total_cases", color = "red")
@@ -276,43 +275,15 @@ plot_usmap(data = map, values = "total_cases", color = "red")
 
 ## Time Series
 ```{r}
-states <- c("alabama", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "district of columbia", 
-            "florida", "georgia", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
-            "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska",
-            "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
-            "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "washington",
-            "west virginia", "wisconsin", "wyoming")
-states %>% length()
-#  [1] "alabama"              "arizona"              "arkansas"             "california"           "colorado"            
-#  [6] "connecticut"          "delaware"             "district of columbia" "florida"              "georgia"             
-# [11] "idaho"                "illinois"             "indiana"              "iowa"                 "kansas"              
-# [16] "kentucky"             "louisiana"            "maine"                "maryland"             "massachusetts"       
-# [21] "michigan"             "minnesota"            "mississippi"          "missouri"             "montana"             
-# [26] "nebraska"             "nevada"               "new hampshire"        "new jersey"           "new mexico"          
-# [31] "new york"             "north carolina"       "north dakota"         "ohio"                 "oklahoma"            
-# [36] "oregon"               "pennsylvania"         "rhode island"         "south carolina"       "south dakota"        
-# [41] "tennessee"            "texas"                "utah"                 "vermont"              "virginia"            
-# [46] "washington"           "west virginia"        "wisconsin"            "wyoming"     
-unique(covi_data_cleaned_model$state)
-covi_data_cleaned_model$state %>% unique()
-remove_state <- c("United States", "Alaska", "American Samoa", "Hawaii", "New York City", "Puerto Rico")
-tolower(covi_data_cleaned_model$state) %in% states
-temp <- covi_data_cleaned_model %>% filter(tolower(covi_data_cleaned_model$state) %in% states)
-temp$state %>% unique()
-temp
 
-ggplot(temp %>% filter(state == "Arizona"), aes(x = date)) +
-  geom_area(aes(y = tot_cases), color="blue", fill= "blue", size=1) +
-  geom_area(aes(y = new_case), color = "red", fill = "red", size = 1)
+temp <- covi_data_cleaned_model
+temp <- temp %>% filter(!state %in% c("United States", "New York City", "Puerto Rico"))
+temp <- temp %>% filter(state == "California")
 temp
-
-temp <- temp %>% group_by(date) %>% summarise(total_cases <- sum(tot_cases),
-                                      new_case <- sum(new_case))
-colnames(temp) <- c("date", "total_cases", "new_cases")
 
 ggplot(temp, aes(x = date)) +
-  geom_area(aes(y = total_cases), color = "blue", fill = "blue", size = 1) +
-  geom_area(aes(y = new_cases), color = "red", fill = "red", size = 1)
+  geom_area(aes(y = tot_cases), color = "blue", fill = "blue", size = 1) +
+  geom_area(aes(y = new_case), color = "red", fill = "red", size = 1) 
 
 ```
 

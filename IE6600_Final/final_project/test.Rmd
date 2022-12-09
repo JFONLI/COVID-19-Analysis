@@ -38,8 +38,6 @@ count_death_cleaned_visual_2 <- readRDS("www/data/count_death_cleaned_visual_2.R
 count_death_cleaned_model
 count_death_cleaned_visual_1
 count_death_cleaned_visual_2
-
-count_death_cleaned_visual_2$disease_type %>% unique()
 ```
 
 ## Correlation Map
@@ -119,6 +117,62 @@ count_death_bar_2$disease_type <- ordered(count_death_bar_2$disease_type, diseas
 count_death_bar_2
 ggplot() +
   geom_col(data = count_death_bar_2, aes(y = disease_type,x = death_by_disease, fill = age_group), position = "fill")
+```
+```{r}
+loli <- count_death_cleaned_visual_2
+loli$age_group %>% unique()
+loli <- subset(loli, select = c("date_start", "disease_type", "sex", "age_group", "death_by_disease"))
+colnames(loli) <- c("date", "diseases", "sex", "age_group", "deaths")
+# filter date sex race
+loli_plot1 <- loli
+loli_plot1 <- loli_plot1 %>% group_by(diseases) %>% summarise(total_deaths <- sum(deaths))
+colnames(loli_plot1)[2] <- "deaths"
+loli_plot1
+
+loli_plot1$total_deaths <- sum(loli_plot1$deaths)
+loli_plot1
+loli_plot1$percent_100 <- round(loli_plot1$deaths / loli_plot1$total_deaths * 100, 1)
+loli_plot1 <- loli_plot1 %>% arrange(desc(-percent_100))
+new_order <- loli_plot1$diseases
+
+ggplot(loli_plot1, aes(x = percent_100, y = reorder(diseases, percent_100))) +
+  geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
+  geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
+  geom_segment(aes(
+    x = 0,
+    xend = percent_100,
+    y = diseases,
+    yend = diseases,
+    color = percent_100
+  )) +
+  scale_size_continuous(range = c(5, 20)) +
+  scale_x_reverse() +
+  theme(legend.position = "none",
+        axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.text.y = element_text(size = 30)) +
+  scale_y_discrete(position = "right")
+  
+
+loli$diseases <- ordered(loli$diseases, levels = new_order)
+
+ggplot(loli) +
+  geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill") +
+  theme(
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank()
+  )
+
 ```
 
 
@@ -210,7 +264,7 @@ bar_chart_2$percents_100 <- bar_chart_2$deaths / bar_chart_2$total_deaths * 100
 ggplot(bar_chart_2) +
   geom_col(aes(x = percents_100, y = condition_group)) +
   scale_y_discrete(position = "right") +
-  scale_x_reverse
+  scale_x_reverse()
 
 ## Plot 2
 condition_covi_cleaned
@@ -225,6 +279,70 @@ bar_chart
 ggplot(bar_chart) +
   geom_col(aes(x = covi_death, y = condition_group, fill = age_group), position = "fill")
 ```
+## Lolipop Chart
+```{r}
+loli <- condition_covi_cleaned
+loli <- loli %>% filter(group == "By Month" & state != "United State")
+loli$covi_death[is.na(loli$covi_death)] <- 0
+loli <- loli %>% mutate("date" = make_date(year = year, month = month))
+loli <- loli %>% filter(state == "California")
+loli <- subset(loli, select = c("date", "condition_group", "age_group", "covi_death"))
+## Here loli filter by date
+
+loli <- loli %>% group_by(condition_group, age_group) %>% summarise(total_deaths <- sum(covi_death))
+colnames(loli)[3] = "deaths"
+
+loli_plot1 <- loli %>% filter(age_group == "All Ages")
+loli_plot1$total_deaths <- sum(loli_plot1$deaths)
+loli_plot1$percent_100 <- round(loli_plot1$deaths / loli_plot1$total_deaths * 100, 1)
+loli_plot1 <- loli_plot1 %>% arrange(desc(-percent_100))
+new_order <- loli_plot1$condition_group
+
+ggplot(loli_plot1, aes(x = percent_100, y = reorder(condition_group, percent_100))) +
+  geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
+  geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
+  geom_segment(aes(
+    x = 0,
+    xend = percent_100,
+    y = condition_group,
+    yend = condition_group,
+    color = percent_100
+  )) +
+  scale_size_continuous(range = c(5, 20)) +
+  scale_x_reverse() +
+  theme(legend.position = "none",
+        axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.text.y = element_text(size = 30)) +
+  scale_y_discrete(position = "right")
+  
+
+
+loli <- loli %>% filter(!age_group %in% c("Not stated", "All Ages"))
+loli$condition_group <- ordered(loli$condition_group, levels = new_order)
+
+ggplot(loli) +
+  geom_col(aes(x = deaths, y = condition_group, fill = age_group), position = "fill") +
+  theme(
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank()
+  )
+
+```
+
+
+
+
 
 ## Time Series
 ```{r}
@@ -310,6 +428,109 @@ ggplot(temp, aes(x = date)) +
   geom_area(aes(y = tot_cases), color = "blue", fill = "blue", size = 1) +
   geom_area(aes(y = new_case), color = "red", fill = "red", size = 1) 
 
+```
+### Heat Map
+```{r}
+heat <- covi_data_cleaned_model
+## filter State
+heat <- heat %>% group_by(day, month, year) %>% summarise(new_cases = sum(new_case))
+heat
+heat <- subset(heat, select = c("day", "month", "year", "new_cases"))
+heat <- heat %>% arrange(year, month, day)
+heat
+
+ggplot(heat, aes(month, day, fill = new_cases)) +
+  geom_tile(color = "white", size = 0.1) +
+  theme_minimal(base_size = 10) +
+  scale_y_continuous(trans = "reverse", breaks = unique(df$day)) +
+  scale_x_continuous(breaks =c(1:12)) +
+  scale_fill_viridis(name="Hrly Temps C",option ="C") +
+  # scale_fill_gradient(high = "red", low = "blue") +
+  facet_grid(year ~.)
+```
+
+## Heat map reference
+```{r}
+# library(devtools)
+# install_url('https://cran.r-project.org/src/contrib/Archive/Interpol.T/Interpol.T_2.1.1.tar.gz')
+# install.packages("ggExtra")
+library(ggplot2)
+library(dplyr) # easier data wrangling 
+library(viridis) # colour blind friendly palette, works in B&W also
+library(Interpol.T) #  will generate a large dataset on initial load
+library(lubridate) # for easy date manipulation
+library(ggExtra) # because remembering ggplot theme options is beyond me
+library(tidyr) 
+ 
+ 
+data <- data(Trentino_hourly_T,package = "Interpol.T")
+ 
+names(h_d_t)[1:5]<- c("stationid","date","hour","temp","flag")
+df <- tbl_df(h_d_t) %>%
+  filter(stationid =="T0001")
+ 
+df <- df %>% mutate(year = year(date),
+                  month = month(date, label=TRUE),
+                  day = day(date))
+df
+  
+df$date<-ymd(df$date) # not necessary for plot but 
+#useful if you want to do further work with the data
+ 
+#cleanup
+rm(list=c("h_d_t","mo_bias","Tn","Tx",
+          "Th_int_list","calibration_l",
+          "calibration_shape","Tm_list"))
+ 
+ 
+#create plotting df
+df <-df %>% select(stationid,day,hour,month,year,temp)%>%
+        fill(temp) #optional - see note below
+ 
+# Re: use of fill
+# This code is for demonstrating a visualisation technique
+# There are 5 missing hourly values in the dataframe.
+ 
+# see the original plot here (from my ggplot demo earlier this year) to see the white spaces where the missing values occcur:
+# https://github.com/johnmackintosh/ggplotdemo/blob/master/temp8.png 
+ 
+# I used 'fill' from  tidyr to take the prior value for each missing value and replace the NA
+# This is a quick fix for the blog post only - _do not_ do this with your real world data
+ 
+# Should really use either use replace_NA or complete(with fill)in tidyr 
+# OR 
+# Look into more specialist way of replacing these missing values -e.g. imputation.
+ 
+ 
+ 
+statno <-unique(df$stationid)
+df
+
+
+ 
+ 
+######## Plotting starts here#####################
+p <-ggplot(df,aes(day,hour,fill=temp))+
+  geom_tile(color= "white",size=0.1) + 
+  scale_fill_viridis(name="Hrly Temps C",option ="C")
+p <-p + facet_grid(year~month)
+p <-p + scale_y_continuous(trans = "reverse", breaks = unique(df$hour))
+p <-p + scale_x_continuous(breaks =c(1,10,20,31))
+p <-p + theme_minimal(base_size = 8)
+p <-p + labs(title= paste("Hourly Temps - Station",statno), x="Day", y="Hour Commencing")
+p <-p + theme(legend.position = "bottom")+
+  theme(plot.title=element_text(size = 14))+
+  theme(axis.text.y=element_text(size=6)) +
+  theme(strip.background = element_rect(colour="white"))+
+  theme(plot.title=element_text(hjust=0))+
+  theme(axis.ticks=element_blank())+
+  theme(axis.text=element_text(size=7))+
+  theme(legend.title=element_text(size=8))+
+  theme(legend.text=element_text(size=6))+
+  removeGrid()#ggExtra
+ 
+# you will want to expand your plot screen before this bit!
+p #awesomeness
 ```
 
 

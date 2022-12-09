@@ -439,6 +439,12 @@ heat <- subset(heat, select = c("day", "month", "year", "new_cases"))
 heat <- heat %>% arrange(year, month, day)
 heat
 
+?geom_tile
+ggplot(heat, aes(month, day, fill = new_cases)) +
+  geom_tile(width = 0.95) +
+  facet_grid(year ~.)
+
+
 ggplot(heat, aes(month, day, fill = new_cases)) +
   geom_tile(color = "white", size = 0.1) +
   theme_minimal(base_size = 10) +

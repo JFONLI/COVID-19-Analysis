@@ -16,7 +16,19 @@ states <- c("alabama", "arizona", "arkansas", "california", "colorado",
             "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", 
             "virginia", "washington", "west virginia", "wisconsin", "wyoming", "alaska", "hawaii")
 
+rename_diseases <- c("All Causes", "Natural Causes", "Septicemia", 
+                     "Maligant neoplasms", "Diabetes mellitus", 
+                     "Alzheimer disease", "Influenza and pneumonia", 
+                     "Chronic lower respiratory", "Respiratory system", "Nephritis", "Symtoms signs", "Diseases of heart",
+                     "Cerebrovascular", "COVID-19")
+
+
 # Load data ----
+## Dataset 1
+count_death_cleaned_model <- readRDS("www/data/count_death_cleaned_model.RDS")
+count_death_cleaned_visual_1 <- readRDS("www/data/count_death_cleaned_visual_1.RDS")
+count_death_cleaned_visual_2 <- readRDS("www/data/count_death_cleaned_visual_2.RDS")
+races <- as.character(unique(count_death_cleaned_model$race)) %>% rev()
 
 ## Dataset 2
 condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.rdS")
@@ -28,6 +40,8 @@ covi_data_cleaned_model <- readRDS("www/data/covi_data_cleaned_model.RDS")
 covi_data_cleaned_visual <- readRDS("www/data/covi_data_cleaned_visual.RDS")
 
 # Source helper functions -----
+source("www/functions/db1_cor_fun.R")
+
 ## Dataset 2
 source("www/functions/db2_map_plot.R")
 source("www/functions/db2_bar_1_fun.R")
@@ -134,7 +148,12 @@ server <- function(input, output) {
   )
   
   observe({
+    # Dataset 1 Bar Plot
     
+    
+    # Dataset 1 Correlation Map
+    values$db1_cor_sex <- input$db1_cor_sex_val
+    values$db1_cor_race <- input$db1_cor_race_val
     
     # Dataset 2 Map
     values$db2_map_date <- input$db2_map_date_val
@@ -159,6 +178,16 @@ server <- function(input, output) {
     
     
     #---------------------------------------------------------------
+    
+    # Dataset 1 Correlation Map Plot
+    output$db1_cor <- renderPlot({
+      args <- list(
+        count_death_cleaned_model,
+        values$db1_cor_sex,
+        values$db1_cor_race
+      )
+      do.call(db1_cor_fun, args)
+    })
     
     # Dataset 2 Map Plot
     output$db2_map <- renderPlot({
@@ -223,9 +252,42 @@ server <- function(input, output) {
       observeEvent(input$db1_box, {
         if(input$db1_box == "Bar"){
           # TODO
+          
         }
         if(input$db1_box == "CorMap"){
           # TODO
+          output$db1_cor_sex <- renderUI({
+            pickerInput(
+              "db1_cor_sex_val",
+              "Choose Sex",
+              choices = c(
+                "male",
+                "female"
+              ),
+              selected = c("male", "female"),
+              multiple = TRUE,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Select Sex",
+                headr = "Sex"
+              )
+            )
+          })
+          output$db1_cor_race <- renderUI({
+            pickerInput(
+              "db1_cor_race_val",
+              "Races",
+              choices = races,
+              multiple = TRUE,
+              selected = races,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select Races",
+                # title = as.character(length(input$condition_group)),
+                header = "Races"
+              ),
+            )
+          })
         }
       })
     }
@@ -294,18 +356,6 @@ server <- function(input, output) {
               ),
             )
           })
-          # output$db2_bar_sex <- renderUI({
-          #   selectInput(
-          #     "db2_bar_sex_val",
-          #     "Choose Sex",
-          #     choices = c(
-          #       "ALL",
-          #       "Male",
-          #       "Female"
-          #     ),
-          #     selected = "ALL"
-          #   )
-          # })
         }
         
         if(input$db2_box == "Time"){
@@ -408,7 +458,7 @@ server <- function(input, output) {
                 "Cases",
                 "Deaths"
               ),
-              selected = "ALL"
+              selected = "Cases"
             )
           })
         }
@@ -422,7 +472,7 @@ server <- function(input, output) {
   
   output$aaa <- renderPrint({
     # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
-    values$db3_ts_choice
+    values$db1_cor_sex
   })
   
 }

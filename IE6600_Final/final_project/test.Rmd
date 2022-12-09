@@ -48,8 +48,12 @@ diseases
 rename_diseases <- c("All Causes", "Natural Causes", "Septicemia", "Maligant neoplasms", "Diabetes mellitus", "Alzheimer disease",
   "Influenza and pneumonia", "Chronic lower respiratory", "Respiratory system", "Nephritis", "Symtoms signs", "Diseases of heart",
   "Cerebrovascular", "COVID-19")
-
-cor_count_death <- count_death_cleaned_model[,diseases]
+count_death_cleaned_model
+temp <- count_death_cleaned_model
+temp$race %>% unique()
+temp <- temp %>% filter(sex == "male")
+temp
+cor_count_death <- temp[,diseases]
 cor_count_death
 colnames(cor_count_death) <- rename_diseases
 cor_count_death

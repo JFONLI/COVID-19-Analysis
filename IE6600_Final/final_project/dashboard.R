@@ -327,6 +327,7 @@ server <- function(input, output) {
           output$db3_ts_date <- NULL
           output$db3_ts_state <- NULL
           output$db3_ts_choice <- NULL
+          
           output$db1_bar_date <- renderUI({
             sliderInput(
               "db1_bar_date_val",

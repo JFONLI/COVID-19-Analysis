@@ -26,7 +26,43 @@ library(lubridate)
 library(usmap)
 library(plotly)
 library(corrplot)
+
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(ggrepel)
+library(GGally)
+library(plotly)
+
+install.packages("rcorr")
 ```
+
+```{r}
+covid_19_countdeath <- readRDS("www/data/count_death_cleaned_model.RDS")
+
+#Select required columns   
+covid_19_countdeath <- covid_19_countdeath[, c("cause_all", "cause_natural", "cause_other" ,"Septicemia (A40-A41)",
+                                               "Malignant neoplasms (C00-C97)","Diabetes mellitus (E10-E14)", 
+                                               "Alzheimer disease (G30)", 
+                                               "Influenza and pneumonia (J09-J18)", 
+                                               "Chronic lower respiratory diseases (J40-J47)" , 
+                                               "Other diseases of respiratory system (J00-J06,J30-J39,J67,J70-J98)", 
+                                               "Nephritis, nephrotic syndrome and nephrosis (N00-N07,N17-N19,N25-N27)", 
+                                               "Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R00-R99)", 
+                                               "Diseases of heart (I00-I09,I11,I13,I20-I51)", 
+                                               "Cerebrovascular diseases (I60-I69)", 
+                                               "COVID-19 (U071, Underlying Cause of Death)")]
+
+
+#Correlation analytics and significance level 
+rcorr(covid_19_countdeath, type = c("pearson","spearman"))
+
+
+res2 <- rcorr(as.matrix(covid_19_countdeath))
+res2
+```
+
 
 #Dataset 1
 
@@ -119,16 +155,19 @@ count_death_bar_2
 ggplot() +
   geom_col(data = count_death_bar_2, aes(y = disease_type,x = death_by_disease, fill = age_group), position = "fill")
 ```
+
+## Loli
 ```{r}
 loli <- count_death_cleaned_visual_2
-loli$age_group %>% unique()
+
 loli <- subset(loli, select = c("date_start", "disease_type", "sex", "age_group", "death_by_disease"))
 colnames(loli) <- c("date", "diseases", "sex", "age_group", "deaths")
+loli %>% arrange(desc(date))
 # filter date sex race
 loli_plot1 <- loli
 loli_plot1 <- loli_plot1 %>% group_by(diseases) %>% summarise(total_deaths <- sum(deaths))
 colnames(loli_plot1)[2] <- "deaths"
-loli_plot1
+
 
 loli_plot1$total_deaths <- sum(loli_plot1$deaths)
 loli_plot1
@@ -283,17 +322,25 @@ ggplot(bar_chart) +
 ## Lolipop Chart
 ```{r}
 loli <- condition_covi_cleaned
+loli
 loli <- loli %>% filter(group == "By Month" & state != "United State")
 loli$covi_death[is.na(loli$covi_death)] <- 0
 loli <- loli %>% mutate("date" = make_date(year = year, month = month))
 loli <- loli %>% filter(state == "California")
 loli <- subset(loli, select = c("date", "condition_group", "age_group", "covi_death"))
 ## Here loli filter by date
+age_choices <- c("0-24")
+loli <- loli %>% filter(age_group %in% age_choices)
+
+loli_plot1 <- loli %>% group_by(condition_group) %>% summarise(total_deaths <- sum(covi_death))
 
 loli <- loli %>% group_by(condition_group, age_group) %>% summarise(total_deaths <- sum(covi_death))
-colnames(loli)[3] = "deaths"
 
-loli_plot1 <- loli %>% filter(age_group == "All Ages")
+
+colnames(loli)[3] = "deaths"
+colnames(loli_plot1)[2] = "deaths"
+
+
 loli_plot1$total_deaths <- sum(loli_plot1$deaths)
 loli_plot1$percent_100 <- round(loli_plot1$deaths / loli_plot1$total_deaths * 100, 1)
 loli_plot1 <- loli_plot1 %>% arrange(desc(-percent_100))
@@ -325,7 +372,7 @@ ggplot(loli_plot1, aes(x = percent_100, y = reorder(condition_group, percent_100
   
 
 
-loli <- loli %>% filter(!age_group %in% c("Not stated", "All Ages"))
+# loli <- loli %>% filter(!age_group %in% c("Not stated", "All Ages"))
 loli$condition_group <- ordered(loli$condition_group, levels = new_order)
 
 ggplot(loli) +

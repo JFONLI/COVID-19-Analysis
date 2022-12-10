@@ -7,28 +7,29 @@ source("www/functions/fluid_design.R")
 
 ui <- dashboardPage(
   dashboardHeader(title = "COVID"),
-  dashboardSidebar(
-    fluidRow(
-      id = "db1_UI",
-      column(
-        width = 12,
-        selectInput(
-          "sex",
-          "Sexs",
-          choices = c("ALL", "MALE", "FEMALE"),
-          selected = "ALL"
-        ),
-        selectInput(
-          "state",
-          "States",
-          choices = c("Alabama", "California", "Texas"),
-          selected = "Alabama"
-        )
-      )
+  # dashboardSidebar(
+  #   fluidRow(
+  #     id = "db1_UI",
+  #     column(
+  #       width = 12,
+  #       selectInput(
+  #         "sex",
+  #         "Sexs",
+  #         choices = c("ALL", "MALE", "FEMALE"),
+  #         selected = "ALL"
+  #       ),
+  #       selectInput(
+  #         "state",
+  #         "States",
+  #         choices = c("Alabama", "California", "Texas"),
+  #         selected = "Alabama"
+  #       )
+  #     )
+  # 
+  #   )
+  #   
+  # ),
   
-    )
-    
-  ),
   dashboardBody(
     useShinyjs(),
     fluidRow(

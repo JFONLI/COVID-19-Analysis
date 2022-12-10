@@ -1,7 +1,7 @@
 
 
 
-db2_map_plot <- function(db, date_range, age_groups, condition_groups) {
+db2_map_fun <- function(db, date_range, age_groups, condition_groups) {
   db <- db %>% filter(age_group %in% age_groups & condition_group %in% condition_groups)
   db <- db %>% mutate("date" = make_date(year = year, month = month))
   db <- db %>% filter(date >= date_range[1] & date <= date_range[2])

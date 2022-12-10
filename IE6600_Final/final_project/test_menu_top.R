@@ -1,106 +1,100 @@
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
+library(shinyjs)
+
+source("www/functions/fluid_design.R")
 
 ui <- dashboardPage(
-  dashboardHeader(title = "COVID-19 SUMMARY"),
+  dashboardHeader(title = "COVID"),
   dashboardSidebar(
-    sidebarMenu(
-      id = "dataset",
-      menuItem("Dataset 1", tabName = "dataset1", icon = icon("table")),
-      menuItem("Dataset 2", tabName = "dataset2", icon = icon("table")),
-      menuItem("Dataset 3", tabName = "dataset3", icon = icon("table"))
+    fluidRow(
+      id = "db1_UI",
+      column(
+        width = 12,
+        selectInput(
+          "sex",
+          "Sexs",
+          choices = c("ALL", "MALE", "FEMALE"),
+          selected = "ALL"
+        ),
+        selectInput(
+          "state",
+          "States",
+          choices = c("Alabama", "California", "Texas"),
+          selected = "Alabama"
+        )
+      )
+  
     )
+    
   ),
   dashboardBody(
+    useShinyjs(),
     fluidRow(
       column(
         width = 12,
-        bsButton("patients", 
-                 label = "PATIENTS", 
-                 icon = icon("user"), 
-                 style = "warning"),
-        bsButton("antimicrobials", 
-                 label = "ANTIMICROBIALS", 
-                 icon = icon("spinner", class = "spinner-box"), 
-                 style = "warning"),
-        bsButton("diagnostics", 
-                 label = "DIAGNOSTICS", 
-                 icon = icon("flask", class = "flask-box"), 
-                 style = "warning"),
-        bsButton("outcome", 
-                 label = "OUTCOME", 
-                 icon = icon("thumbs-o-up"), 
-                 style = "warning")
+          bsButton("patients", 
+                   label = "PATIENTS", 
+                   icon = icon("table"), 
+                   style = "success"),
+          bsButton("antimicrobials", 
+                   label = "ANTIMICROBIALS", 
+                   icon = icon("spinner", class = "spinner-box"), 
+                   style = "success"),
+          bsButton("diagnostics", 
+                   label = "DIAGNOSTICS", 
+                   icon = icon("flask", class = "flask-box"), 
+                   style = "success"),
+          bsButton("outcome", 
+                   label = "OUTCOME", 
+                   icon = icon("thumbs-o-up"), 
+                   style = "success")
+        )
+    ),
+    fluidRow(
+      div(
+        id = "db1_panel",
+        column(
+          width = 12,
+          h2("Hello p1")
+        ),
+        column(
+          width = 6,
+          h2("Hello p2")
+        ),
+        column(
+          width = 6,
+          h2("Hello p3")
+        )
       )
     ),
+    fluid_design("db2_panel")
   )
 )
 
-
-
-server <- function(input, output, session){
-  update_all <- function(x) {
-    updateSelectInput(session, "tab",
-                      choices = c("", "Patients", "Antimicrobial consumption", "Diagnostics", "Outcome"),
-                      label = "",
-                      selected = x
-    )
-  }
+server <- function(input, output){
+  observeEvent("", {
+    show("db1_panel")
+    hide("db2_panel")
+  })
   
   observeEvent(input$patients, {
-    update_all("Patients")
+    show("db1_panel")
+    hide("db2_panel")
+    show("db1_UI")
   })
+  
   observeEvent(input$antimicrobials, {
-    update_all("Antimicrobial consumption")
+    hide("db1_panel")
+    show("db2_panel")
+    hide("db1_UI")
   })
-  observeEvent(input$diagnostics, {
-    update_all("Diagnostics")
-  })
-  observeEvent(input$outcome, {
-    update_all("Outcome")
-  })
-  
-  output$box_pat2 <- renderUI({
-    tabBox(
-      id = "box_pat2"
-    )
-  })
-  
-  
-  observeEvent(input$tab, {
-    x <- input$tab
-    updateButton(session, "patients", style = {
-      if (x == "Patients") {
-        paste("warning")
-      } else {
-        paste("success")
-      }
-    })
-    updateButton(session, "antimicrobials", style = {
-      if (x == "Antimicrobial consumption") {
-        paste("warning")
-      } else {
-        paste("success")
-      }
-    })
-    updateButton(session, "diagnostics", style = {
-      if (x == "Diagnostics") {
-        paste("warning")
-      } else {
-        paste("success")
-      }
-    })
-    updateButton(session, "outcome", style = {
-      if (x == "Outcome") {
-        paste("warning")
-      } else {
-        paste("success")
-      }
-    })
-  })
-  
   
 }
+
+
+
+
 
 shinyApp(ui, server)

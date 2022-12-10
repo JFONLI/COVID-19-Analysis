@@ -15,6 +15,7 @@ install.packages("multiInput")
 
 
 ```{r cars}
+# install.packages("usmap")
 library(maps)
 library(mapproj)
 library(shiny)
@@ -318,8 +319,9 @@ ggplot(loli_plot1, aes(x = percent_100, y = reorder(condition_group, percent_100
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank(),
-        axis.text.y = element_text(size = 30)) +
+        axis.text.y = element_text(size = 10)) +
   scale_y_discrete(position = "right")
+
   
 
 
@@ -434,10 +436,8 @@ ggplot(temp, aes(x = date)) +
 heat <- covi_data_cleaned_model
 ## filter State
 heat <- heat %>% group_by(day, month, year) %>% summarise(new_cases = sum(new_case))
-heat
 heat <- subset(heat, select = c("day", "month", "year", "new_cases"))
 heat <- heat %>% arrange(year, month, day)
-heat
 
 ?geom_tile
 ggplot(heat, aes(month, day, fill = new_cases)) +
@@ -446,7 +446,7 @@ ggplot(heat, aes(month, day, fill = new_cases)) +
 
 
 ggplot(heat, aes(month, day, fill = new_cases)) +
-  geom_tile(color = "white", size = 0.1) +
+  geom_tile(color = "white", size = 0.1, width = 0.95) +
   theme_minimal(base_size = 10) +
   scale_y_continuous(trans = "reverse", breaks = unique(df$day)) +
   scale_x_continuous(breaks =c(1:12)) +

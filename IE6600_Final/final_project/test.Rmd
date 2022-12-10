@@ -481,8 +481,11 @@ ggplot(temp, aes(x = date)) +
 ### Heat Map
 ```{r}
 heat <- covi_data_cleaned_model
+states <- c("")
+heat <- heat %>% filter(state %in% states)
 ## filter State
 heat <- heat %>% group_by(day, month, year) %>% summarise(new_cases = sum(new_case))
+heat
 heat <- subset(heat, select = c("day", "month", "year", "new_cases"))
 heat <- heat %>% arrange(year, month, day)
 

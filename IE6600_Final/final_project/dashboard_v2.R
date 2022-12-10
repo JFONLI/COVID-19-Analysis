@@ -55,6 +55,7 @@ source("www/functions/db2_ts_fun.R")
 
 ## Dataset 3
 source("www/functions/db3_map_fun.R")
+source("www/functions/db3_heat_fun.R")
 source("www/functions/db3_ts_fun.R")
 
 
@@ -477,6 +478,45 @@ server <- function(input, output){
       do.call(db2_bar_fun, args)
     })
     
+    # Dataset 3 Variables
+    values$db3_date <- input$db3_date
+    values$db3_state <- input$db3_state
+    values$db3_choice <- input$db3_choice
+    
+    
+    # Dataset 3 Map
+    output$db3_map <- renderPlot({
+      args <- list(
+        covi_data_cleaned_visual,
+        values$db3_date <- input$db3_date,
+        values$db3_choice <- input$db3_choice
+      )
+      do.call(db3_map_fun, args)
+    })
+    
+    # Dataset 3 Heat Map
+    output$db3_heat <- renderPlot({
+      args <- list(
+        covi_data_cleaned_model,
+        values$db3_state <- input$db3_state,
+        values$db3_choice <- input$db3_choice
+      )
+      do.call(db3_heat_fun, args)
+    })
+    
+    
+    # Dataset 3 Time Series
+    output$db3_ts <- renderPlot({
+      args <- list(
+        covi_data_cleaned_model,
+        values$db3_date,
+        values$db3_state,
+        values$db3_choice
+      )
+      
+      do.call(db3_ts_fun, args)
+    })
+    
   })
   
   
@@ -484,6 +524,7 @@ server <- function(input, output){
   output$aaa <- renderPrint({
     # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
     # values$db2_age
+    values$db3_choice == "Cases"
   })
   
 }

@@ -701,10 +701,10 @@ server <- function(input, output) {
   
   
   
-  # output$aaa <- renderPrint({
-  #   # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
-  #   values$db1_bar_sex
-  # })
+  output$aaa <- renderPrint({
+    # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
+    # values$db1_bar_sex
+  })
   
 }
 

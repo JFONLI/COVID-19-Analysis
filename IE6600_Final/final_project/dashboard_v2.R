@@ -95,7 +95,7 @@ source("www/functions/pred_kpi_fun.R")
 
 
 ui <- dashboardPage(
-  skin = "red",
+  skin = "blue",
   dashboardHeader(title = "COVID-19 SUMMARY", titleWidth = 250),
   dashboardSidebar(
     width = 250,
@@ -317,33 +317,33 @@ ui <- dashboardPage(
     fluidRow(
       column(3, 
         bsButton("dataset1", 
-                 label = "Dataset 1", 
+                 label = "US Mortality", 
                  icon = icon("database"), 
-                 style = "success",
+                 style = "primary",
                  size = "large",
                  width = "100%")
       ),
       column(3, 
              bsButton("dataset2", 
-                      label = "Dataset 2", 
+                      label = "COVID-19 Deaths & Conditions", 
                       icon = icon("database"), 
-                      style = "success",
+                      style = "primary",
                       size = "large",
                       width = "100%")
       ),
       column(3, 
              bsButton("dataset3", 
-                      label = "Dataset 3", 
+                      label = "COVID-19 Cases & Deaths", 
                       icon = icon("database"), 
-                      style = "success",
+                      style = "primary",
                       size = "large",
                       width = "100%")
       ),
       column(3, 
              bsButton("prediction", 
-                      label = "Future Prediction", 
+                      label = "Future COVID-19 Cases Prediction", 
                       icon = icon("table"), 
-                      style = "success",
+                      style = "primary",
                       size = "large",
                       width = "100%")
       )
@@ -445,8 +445,16 @@ ui <- dashboardPage(
     div(
       id = "db3_panel",
       fluidRow(
-        valueBoxOutput("db3_kpi_1"),
-        valueBoxOutput("db3_kpi_2")
+        # column(
+        #   6,
+        #   valueBoxOutput("db3_kpi_1")
+        # ),
+        # column(
+        #   6,
+        #   valueBoxOutput("db3_kpi_2")
+        # )
+        valueBoxOutput("db3_kpi_1", width = 6),
+        valueBoxOutput("db3_kpi_2", width = 6)
       ),
       fluidRow(
         box(
@@ -469,6 +477,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 12,
+          height = 250,
           title = "Heat Map",
           status = "primary",
           solidHeader = TRUE,
@@ -609,15 +618,15 @@ server <- function(input, output){
     
     output$db1_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[1], "%"), "Death Rates", icon = icon("skull-crossbones"),
-        color = "yellow"
+        paste(values$db1_kpi[1], "%"), "US Overall Death Rates", icon = icon("skull-crossbones"),
+        color = "purple"
       )
     })
     
     output$db1_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$db1_kpi[2], "%"), "Accidents Death Rates", icon = icon("person-falling-burst"),
-        color = "yellow"
+        color = "aqua"
       )
     })
     
@@ -673,21 +682,21 @@ server <- function(input, output){
     
     output$db2_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("virus-covid"),
+        paste(values$db2_kpi[[1]][1], "%"), paste("% Healthy People Die From", values$db2_kpi[[2]][1]), icon = icon("virus-covid"),
         color = "yellow"
       )
     })
     
     output$db2_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][2], "%"), values$db2_kpi[[2]][2], icon = icon("ranking-star"),
+        paste(values$db2_kpi[[1]][2], "%"), paste("COVID-19 Death With ",values$db2_kpi[[2]][2]), icon = icon("ranking-star"),
         color = "yellow"
       )
     })
     
     output$db2_kpi_3 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][3], "%"), values$db2_kpi[[2]][3], icon = icon("ranking-star"),
+        paste(values$db2_kpi[[1]][3], "%"), paste("COVID-19 Death With", values$db2_kpi[[2]][3]), icon = icon("ranking-star"),
         color = "yellow"
       )
     })
@@ -745,7 +754,7 @@ server <- function(input, output){
     
     output$db3_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db3_kpi[1], "%"), "COVID-19 Cases Rate", icon = icon("head-side-mask"),
+        paste(values$db3_kpi[1], "%"), "COVID-19 Confirmed Cases Rate", icon = icon("head-side-mask"),
         color = "yellow"
       )
     })

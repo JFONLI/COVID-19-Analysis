@@ -1,8 +1,9 @@
 
 
 
-db1_loli_fun <- function(loli, date_range, sex_choices, race_choices) {
+db1_loli_fun <- function(loli, date_range, sex_choices, race_choices, age_choices) {
   # filter date sex race
+  loli <- filter(loli, age_group %in% age_choices)
   loli <- filter(loli, sex %in% sex_choices & race %in% race_choices)
   loli <- subset(loli, select = c("date_start", "disease_type", "sex", "age_group", "death_by_disease"))
   colnames(loli) <- c("date", "diseases", "sex", "age_group", "deaths")
@@ -23,8 +24,8 @@ db1_loli_fun <- function(loli, date_range, sex_choices, race_choices) {
   new_order <- loli_plot1$diseases
   
   ggplot(loli_plot1, aes(x = percent_100, y = reorder(diseases, percent_100))) +
-    geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
-    geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
+    geom_text(aes(label = paste(percent_100, "%")), vjust = -0.3, hjust = -0.7) +
+    geom_point(aes(size = percent_100/5, color = percent_100), alpha = 0.5) +
     geom_segment(aes(
       x = 0,
       xend = percent_100,
@@ -34,15 +35,17 @@ db1_loli_fun <- function(loli, date_range, sex_choices, race_choices) {
     )) +
     scale_size_continuous(range = c(5, 20)) +
     scale_x_reverse() +
+    coord_cartesian(clip = 'off') +
     theme(legend.position = "none",
           axis.title = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.y = element_blank(),
+          axis.ticks.x = element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           panel.background = element_blank(),
-          axis.text.y = element_text(size = 10)) +
+          axis.text.y = element_text(size = 12, face = "bold")) +
     scale_y_discrete(position = "right")
 }
 

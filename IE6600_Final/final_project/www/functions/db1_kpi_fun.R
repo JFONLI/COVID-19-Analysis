@@ -11,9 +11,9 @@ db1_kpi_fun <- function(kpi, date_range, sex_choices, race_choices, age_choices)
   
   kpi_values <- c(0,0,0)
   
-  kpi_values[1] <- round(sum(kpi$cause_all)/332000000 * 100, 1)
-  kpi_values[2] <- round(sum(kpi$cause_other)/332000000 * 100, 1)
-  kpi_values[3] <- round(sum(kpi$`COVID-19 (U071, Underlying Cause of Death)`)/332000000 * 100, 1)
+  kpi_values[1] <- round(sum(kpi$cause_all)/332000000 * 100000, 1)
+  kpi_values[2] <- round(sum(kpi$cause_other)/332000000 * 100000, 1)
+  kpi_values[3] <- round(sum(kpi$`COVID-19 (U071, Underlying Cause of Death)`)/332000000 * 100000, 1)
   
   return(kpi_values)
 }

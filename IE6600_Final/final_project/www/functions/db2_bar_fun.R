@@ -27,8 +27,12 @@ db2_bar_fun <- function(loli, date_range, states, age_choices) {
   
   loli$condition_group <- ordered(loli$condition_group, levels = new_order)
   
+  shades <- colorRampPalette(c("#0f5e9c", "#2389da", "#1ca3ec", "#5abcd8", "#74ccf4"))(10)
+  shades <- rev(shades)
+  
   ggplot(loli) +
     geom_col(aes(x = deaths, y = condition_group, fill = age_group), position = "fill") +
+    scale_fill_manual(values = shades) + 
     theme(
       axis.title = element_blank(),
       axis.text = element_blank(),

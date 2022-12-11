@@ -22,6 +22,11 @@ db2_kpi_fun <- function(kpi, date_range, states, age_choices) {
   
   kpi_values <- c(0, 0, 0)
   kpi_text <- c("", "", "")
+  
+  if(dim(kpi)[1] == 0){
+    return (list(kpi_values, kpi_text))
+  }
+  
   kpi_values[1] <- kpi$percent_100[kpi$condition_group == "COVID-19"]
   kpi_text[1] <- "COVID-19"
   

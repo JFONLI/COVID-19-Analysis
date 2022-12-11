@@ -18,6 +18,11 @@ library(tidyverse)
 library(dplyr)
 library(ggpubr)
 library(ggrepel)
+library(ggExtra)
+library(tidyr)
+library(Hmisc)
+library(GGally)
+library(scales)
 
 
 # Constant variable
@@ -113,7 +118,8 @@ ui <- dashboardPage(
             step = 30,
             value = c(as.Date("2019-01-01", "%Y-%m-%d"), as.Date("2021-09-01", "%Y-%m-%d")),
             timeFormat = "%b %Y"
-          )
+          ),
+          br()
         ),
         menuItem(
           "Sex",
@@ -150,7 +156,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "Races"
             )
-          )
+          ),
+          br()
         ),
         menuItem(
           "Age Group",
@@ -167,7 +174,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "Age Groups"
             )
-          )
+          ),
+          br()
         )
         
       )
@@ -186,7 +194,8 @@ ui <- dashboardPage(
             step = 30,
             value = c(as.Date("2020-01-01", "%Y-%m-%d"), as.Date("2022-10-01", "%Y-%m-%d")),
             timeFormat = "%b %Y"
-          )
+          ),
+          br()
         ),
         menuItem(
           "Condition Group",
@@ -203,7 +212,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "Condition Groups"
             )
-          )
+          ),
+          br()
         ),
         menuItem(
           "Age Group",
@@ -220,7 +230,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "Age Groups"
             )
-          )
+          ),
+          br()
         ),
         menuItem(
           "States",
@@ -237,7 +248,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "States"
             )
-          )
+          ),
+          br()
         )
       )
     ),
@@ -256,7 +268,8 @@ ui <- dashboardPage(
             step = 30,
             value = c(as.Date("2020-01-22", "%Y-%m-%d"), as.Date("2022-10-18", "%Y-%m-%d")),
             timeFormat = "%b %Y"
-          )
+          ),
+          br()
         ),
         menuItem(
           "States",
@@ -273,7 +286,8 @@ ui <- dashboardPage(
               # title = as.character(length(input$condition_group)),
               header = "States"
             )
-          )
+          ),
+          br()
         ),
         menuItem(
           "Choices",
@@ -286,7 +300,8 @@ ui <- dashboardPage(
               "Deaths"
             ),
             selected = "Cases"
-          )
+          ),
+          br()
         )
       )
     ),
@@ -302,7 +317,8 @@ ui <- dashboardPage(
             "",
             choices = stateList,
             selected = stateList[1]
-          )
+          ),
+          br()
         )
       )
     ),
@@ -363,6 +379,11 @@ ui <- dashboardPage(
       ),
       fluidRow(
         box(
+          width = 12,
+          status = "primary",
+          solidHeader = TRUE,
+          collapsible = TRUE,
+          title = "Predictions for Daily New Cases in the US for Future 100 Days",
           plotOutput("pred_line")
         )
       )
@@ -377,25 +398,24 @@ ui <- dashboardPage(
       ),
       fluidRow(
         box(
-          title = "Correlation Map",
-          status = "primary",
-          solidHeader = TRUE,
-          collapsible = TRUE,
-          plotOutput("db1_cor") %>% withSpinner(color="#0dc5c1")
-        )
-      ),
-      fluidRow(
-        box(
           width = 12,
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
           title = "Bar Chart",
           fluidRow(
-            splitLayout(cellWidths = c("35%", "35%"), 
-                        plotOutput("db1_loli") %>% withSpinner(color="#0dc5c1"),
-                        plotOutput("db1_bar") %>% withSpinner(color="#0dc5c1"))
+            column(8, plotOutput("db1_loli") %>% withSpinner(color="#0dc5c1")),
+            column(4, plotOutput("db1_bar") %>% withSpinner(color="#0dc5c1"))
           )
+        )
+      ),
+      fluidRow(
+        box(
+          title = "Correlation Map",
+          status = "primary",
+          solidHeader = TRUE,
+          collapsible = TRUE,
+          plotOutput("db1_cor") %>% withSpinner(color="#0dc5c1")
         )
       )
     ),
@@ -415,7 +435,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db2_map") %>% withSpinner(color="#0dc5c1")
+          plotlyOutput("db2_map") %>% withSpinner(color="#0dc5c1")
         ),
         box(
           width = 6,
@@ -423,7 +443,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db2_ts") %>% withSpinner(color="#0dc5c1")
+          plotlyOutput("db2_ts") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
@@ -434,9 +454,11 @@ ui <- dashboardPage(
           solidHeader = TRUE,
           collapsible = TRUE,
           fluidRow(
-            splitLayout(cellWidths = c("50%", "50%"), 
-                        plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1"),
-                        plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
+            column(8, plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1")),
+            column(4, plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
+            # splitLayout(cellWidths = c("50%", "50%"), 
+            #             plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1"),
+            #             plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
           )
         )
       )
@@ -445,14 +467,6 @@ ui <- dashboardPage(
     div(
       id = "db3_panel",
       fluidRow(
-        # column(
-        #   6,
-        #   valueBoxOutput("db3_kpi_1")
-        # ),
-        # column(
-        #   6,
-        #   valueBoxOutput("db3_kpi_2")
-        # )
         valueBoxOutput("db3_kpi_1", width = 6),
         valueBoxOutput("db3_kpi_2", width = 6)
       ),
@@ -463,7 +477,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_map") %>% withSpinner(color="#0dc5c1")
+          plotlyOutput("db3_map") %>% withSpinner(color="#0dc5c1")
         ),
         box(
           width = 6,
@@ -471,69 +485,20 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_ts") %>% withSpinner(color="#0dc5c1")
+          plotlyOutput("db3_ts") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
         box(
           width = 12,
-          height = 250,
           title = "Heat Map",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_heat") %>% withSpinner(color="#0dc5c1")
+          plotOutput("db3_heat", height = "1000px") %>% withSpinner(color="#0dc5c1")
         )
       )
     )
-    
-    # fluidRow(
-    #   div(
-    #     id = "db3_panel",
-    #     column(
-    #       width = 12,
-    #       valueBoxOutput("db3_kpi_1"),
-    #       valueBoxOutput("db3_kpi_2")
-    #     ),
-    #     box(
-    #       title = "Map",
-    #       plotOutput("db3_map")
-    #     ),
-    #     box(
-    #       title = "Heat Map",
-    #       plotOutput("db3_heat")
-    #     ),
-    #     box(
-    #       title = "Time Series",
-    #       plotOutput("db3_ts")
-    #     )
-    # 
-    # 
-    #     # fluidRow(
-    #     #   column(
-    #     #     width = 10,
-    #     #     box(
-    #     #       title = "Map",
-    #     #       plotOutput("db3_map")
-    #     #     )
-    #     #   ),
-    #     #   column(
-    #     #     width = 10,
-    #     #     box(
-    #     #       title = "Heat Map",
-    #     #       plotOutput("db3_heat")
-    #     #     )
-    #     #   )
-    #     # ),
-    #     # column(
-    #     #   width = 12,
-    #     #   box(
-    #     #     title = "Time Series",
-    #     #     plotOutput("db3_ts")
-    #     #   )
-    #     # )
-    #   )
-    # )
   )
 )
 
@@ -618,21 +583,21 @@ server <- function(input, output){
     
     output$db1_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[1], "%"), "US Overall Death Rates", icon = icon("skull-crossbones"),
+        paste(values$db1_kpi[1], "Deaths"), "Per 100,000 Population", icon = icon("skull-crossbones"),
         color = "purple"
       )
     })
     
     output$db1_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[2], "%"), "Accidents Death Rates", icon = icon("person-falling-burst"),
+        paste(values$db1_kpi[2], "Accidents Deaths"), "Per 100,000 Population", icon = icon("person-falling-burst"),
         color = "aqua"
       )
     })
     
     output$db1_kpi_3 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[3], "%"), "COVID-19 Death Rates", icon = icon("virus-covid"),
+        paste(values$db1_kpi[3], "COVID-19 Deaths"), "Per 100,000 Population", icon = icon("virus-covid"),
         color = "yellow"
       )
     })
@@ -642,7 +607,8 @@ server <- function(input, output){
       args <- list(
         count_death_cleaned_model,
         values$db1_sex,
-        values$db1_race
+        values$db1_race,
+        values$db1_age
       )
       do.call(db1_cor_fun, args)
     })
@@ -653,7 +619,8 @@ server <- function(input, output){
         count_death_cleaned_visual_2,
         values$db1_date,
         values$db1_sex,
-        values$db1_race
+        values$db1_race,
+        values$db1_age
       )
       do.call(db1_loli_fun, args)
     })
@@ -663,7 +630,8 @@ server <- function(input, output){
         count_death_cleaned_visual_2,
         values$db1_date,
         values$db1_sex,
-        values$db1_race
+        values$db1_race,
+        values$db1_age
       )
       do.call(db1_bar_fun, args)
     })
@@ -675,25 +643,25 @@ server <- function(input, output){
     values$db2_state <- input$db2_state
     
     # Dataset 2 KPI
-    values$db2_kpi <- db2_kpi_fun(condition_covi_cleaned, 
+    values$db2_kpi <- db2_kpi_fun(condition_covi_cleaned,
                                   values$db2_date,
                                   values$db2_state,
                                   values$db2_age)
-    
+
     output$db2_kpi_1 <- renderValueBox({
       valueBox(
         paste(values$db2_kpi[[1]][1], "%"), paste("% Healthy People Die From", values$db2_kpi[[2]][1]), icon = icon("virus-covid"),
         color = "yellow"
       )
     })
-    
+
     output$db2_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$db2_kpi[[1]][2], "%"), paste("COVID-19 Death With ",values$db2_kpi[[2]][2]), icon = icon("ranking-star"),
         color = "yellow"
       )
     })
-    
+
     output$db2_kpi_3 <- renderValueBox({
       valueBox(
         paste(values$db2_kpi[[1]][3], "%"), paste("COVID-19 Death With", values$db2_kpi[[2]][3]), icon = icon("ranking-star"),
@@ -702,7 +670,7 @@ server <- function(input, output){
     })
   
     # Dataset 2 Map
-    output$db2_map <- renderPlot({
+    output$db2_map <- renderPlotly({
       args <- list(
         condition_covi_cleaned %>% filter(group == "By Month"),
         values$db2_date,
@@ -711,9 +679,9 @@ server <- function(input, output){
       )
       do.call(db2_map_fun, args)
     })
-    
+
     # Dataset 2 Time Series
-    output$db2_ts <- renderPlot({
+    output$db2_ts <- renderPlotly({
       args <- list(
         condition_covi_cleaned[,-11] %>% filter(group == "By Month"),
         values$db2_date,
@@ -733,7 +701,7 @@ server <- function(input, output){
       )
       do.call(db2_loli_fun, args)
     })
-    
+
     output$db2_bar <- renderPlot({
       args <- list(
         condition_covi_cleaned,
@@ -767,7 +735,7 @@ server <- function(input, output){
     })
     
     # Dataset 3 Map
-    output$db3_map <- renderPlot({
+    output$db3_map <- renderPlotly({
       args <- list(
         covi_data_cleaned_visual,
         values$db3_date <- input$db3_date,
@@ -788,7 +756,7 @@ server <- function(input, output){
     
     
     # Dataset 3 Time Series
-    output$db3_ts <- renderPlot({
+    output$db3_ts <- renderPlotly({
       args <- list(
         covi_data_cleaned_model,
         values$db3_date,

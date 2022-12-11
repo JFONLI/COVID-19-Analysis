@@ -26,7 +26,7 @@ db2_loli_fun <- function(loli, date_range, states, age_choices) {
   new_order <- loli_plot1$condition_group
   
   ggplot(loli_plot1, aes(x = percent_100, y = reorder(condition_group, percent_100))) +
-    geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
+    geom_text(aes(label = paste(percent_100, "%")), vjust = -0.3, hjust = -0.7) +
     geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
     geom_segment(aes(
       x = 0,
@@ -37,15 +37,17 @@ db2_loli_fun <- function(loli, date_range, states, age_choices) {
     )) +
     scale_size_continuous(range = c(5, 20)) +
     scale_x_reverse() +
+    coord_cartesian(clip = 'off') +
     theme(legend.position = "none",
           axis.title = element_blank(),
           axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
           axis.ticks.y = element_blank(),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           panel.background = element_blank(),
-          axis.text.y = element_text(size = 10)) +
+          axis.text.y = element_text(size = 12, face = "bold")) +
     scale_y_discrete(position = "right")
   
 }

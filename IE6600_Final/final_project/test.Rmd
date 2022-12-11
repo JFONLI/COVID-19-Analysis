@@ -35,7 +35,7 @@ library(ggrepel)
 library(GGally)
 library(plotly)
 
-install.packages("rcorr")
+# install.packages("rcorr")
 ```
 
 ```{r}
@@ -150,6 +150,7 @@ library(plotly)
 # setwd("C:/Users/sandy/Documents/Northeastern_Grad studies/IE 5374/Data")
 covid_19_countdeath <- readRDS("www/data/count_death_cleaned_model.rds")
 
+covid_19_countdeath
 
 
 print(covid_19_countdeath)
@@ -254,7 +255,7 @@ loli <- count_death_cleaned_visual_2
 
 loli <- subset(loli, select = c("date_start", "disease_type", "sex", "age_group", "death_by_disease"))
 colnames(loli) <- c("date", "diseases", "sex", "age_group", "deaths")
-loli %>% arrange(desc(date))
+
 # filter date sex race
 loli_plot1 <- loli
 loli_plot1 <- loli_plot1 %>% group_by(diseases) %>% summarise(total_deaths <- sum(deaths))
@@ -262,39 +263,42 @@ colnames(loli_plot1)[2] <- "deaths"
 
 
 loli_plot1$total_deaths <- sum(loli_plot1$deaths)
-loli_plot1
 loli_plot1$percent_100 <- round(loli_plot1$deaths / loli_plot1$total_deaths * 100, 1)
 loli_plot1 <- loli_plot1 %>% arrange(desc(-percent_100))
 new_order <- loli_plot1$diseases
 
-ggplot(loli_plot1, aes(x = percent_100, y = reorder(diseases, percent_100))) +
-  geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
-  geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
-  geom_segment(aes(
-    x = 0,
-    xend = percent_100,
-    y = diseases,
-    yend = diseases,
-    color = percent_100
-  )) +
-  scale_size_continuous(range = c(5, 20)) +
-  scale_x_reverse() +
-  theme(legend.position = "none",
-        axis.title = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
-        panel.background = element_blank(),
-        axis.text.y = element_text(size = 30)) +
-  scale_y_discrete(position = "right")
+# ggplot(loli_plot1, aes(x = percent_100, y = reorder(diseases, percent_100))) +
+#   geom_text(aes(label = paste(percent_100, "%"), size = percent_100/6), vjust = -0.6, hjust = -0.3) +
+#   geom_point(aes(size = percent_100, color = percent_100), alpha = 0.5) +
+#   geom_segment(aes(
+#     x = 0,
+#     xend = percent_100,
+#     y = diseases,
+#     yend = diseases,
+#     color = percent_100
+#   )) +
+#   scale_size_continuous(range = c(5, 20)) +
+#   scale_x_reverse() +
+#   theme(legend.position = "none",
+#         axis.title = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.border = element_blank(),
+#         panel.background = element_blank(),
+#         axis.text.y = element_text(size = 30)) +
+#   scale_y_discrete(position = "right")
   
 
 loli$diseases <- ordered(loli$diseases, levels = new_order)
 
+shades <- colorRampPalette(c("#0f5e9c", "#2389da", "#1ca3ec", "#5abcd8", "#74ccf4"))(10)
+shades <- rev(shades)
+
 ggplot(loli) +
   geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill") +
+  scale_fill_manual(values = shades) + 
   theme(
     axis.title = element_blank(),
     axis.text = element_blank(),
@@ -307,6 +311,22 @@ ggplot(loli) +
 
 ```
 
+```{r}
+install.packages("albersusa")
+library(albersusa)
+
+suppressPackageStartupMessages(library(plotly))
+usa <- albersusa::usa_sf("laea")
+usd <- crosstalk::SharedData$new(usa)
+p <- ggplot(usd) + geom_sf(aes(fill = pop_2010))
+
+ggplotly(p) %>%
+  highlight(
+    "plotly_hover",
+    selected = attrs_selected(line = list(color = "black"))
+) %>%
+  widgetframe::frameWidget()
+```
 
 
 ```{r}
@@ -329,21 +349,26 @@ condition_covi_cleaned$state %>% unique()
 ```
 # KPI Card
 ```{r}
+
+states <- c("")
 kpi <- condition_covi_cleaned
 kpi <- kpi %>% filter(group == "By Month" & state != "United State")
 kpi$covi_death[is.na(kpi$covi_death)] <- 0
 kpi <- kpi %>% mutate("date" = make_date(year = year, month = month))
 # filter by state
+kpi <- kpi %>% filter(tolower(state) %in% states)
+kpi
 kpi <- subset(kpi, select = c("date", "condition_group", "age_group", "covi_death"))
 #filter by date and age
-
+kpi
 
 kpi <- kpi %>% group_by(condition_group) %>% summarise(total_deaths <- sum(covi_death))
 colnames(kpi)[2] = "deaths"
 kpi$total_deaths <- sum(kpi$deaths)
 kpi$percent_100 <- round(kpi$deaths / kpi$total_deaths * 100, 1)
 kpi <- kpi %>% arrange(desc(percent_100))
-kpi
+dim(kpi)[1] == 0
+dim(kpi)
 
 kpi_values <- c(0, 0, 0)
 kpi_text <- c("", "", "")
@@ -415,7 +440,40 @@ map
 ?scale_fill_continuous
 plot_usmap(data = map, values = "total_cases", color = "red")
 
-as.Date("2020-10-01") == as.Date("2020-10")
+map
+
+install.packages("sf")
+library(sf)
+
+
+
+p <- plot_usmap(data = map, values = "total_cases")
+p
+
+install.packages("widgetframe")
+library(widgetframe)
+
+ggplotly(p) %>% 
+  highlight(
+    "plotly_hover",
+    selected = attrs_selected(line = list(color = "black"))
+  ) %>% widgetframe::frameWidget()
+
+```
+
+
+```{r}
+suppressPackageStartupMessages(library(plotly))
+usa <- albersusa::usa_sf("laea")
+usd <- crosstalk::SharedData$new(usa)
+p <- ggplot(usd) + geom_sf(aes(fill = pop_2010))
+
+ggplotly(p) %>%
+  highlight(
+    "plotly_hover",
+    selected = attrs_selected(line = list(color = "black"))
+) %>%
+  widgetframe::frameWidget()
 ```
 
 
@@ -649,8 +707,6 @@ ggplot(temp, aes(x = date)) +
 ### Heat Map
 ```{r}
 heat <- covi_data_cleaned_model
-states <- c("")
-heat <- heat %>% filter(state %in% states)
 ## filter State
 heat <- heat %>% group_by(day, month, year) %>% summarise(new_cases = sum(new_case))
 heat
@@ -666,7 +722,7 @@ heat <- heat %>% arrange(year, month, day)
 ggplot(heat, aes(month, day, fill = new_cases)) +
   geom_tile(color = "white", size = 0.1, width = 0.95) +
   theme_minimal(base_size = 10) +
-  scale_y_continuous(trans = "reverse", breaks = unique(df$day)) +
+  scale_y_continuous(trans = "reverse", breaks = unique(heat$day)) +
   scale_x_continuous(breaks =c(1:12)) +
   # scale_fill_viridis(name="Hrly Temps C",option ="C") +
   scale_fill_gradient(high = "red", low = "blue") +

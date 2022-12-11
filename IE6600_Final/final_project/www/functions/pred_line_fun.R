@@ -10,9 +10,11 @@ pred_line_fun <- function(db, state_choice) {
     geom_line(data=subset(perState_covi_data, date>=as.Date("2022-10-19")), 
               aes(date, new_case, colour="Predictions"), linetype=2) +
     scale_color_manual(name = "Color", values = c("Observations" = "black", "Predictions" = "red")) + 
-    xlab("Year 2022") + 
+    scale_x_date(labels = date_format("%m %Y"), breaks = "1 month") +
+    # xlab("Year 2022") + 
     ylab("Daily New Cases") + 
-    ggtitle("Predictions for Daily New Cases in the US for Future 100 Days") + 
+    # ggtitle("Predictions for Daily New Cases in the US for Future 100 Days") +
+    theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))
   # }
 }

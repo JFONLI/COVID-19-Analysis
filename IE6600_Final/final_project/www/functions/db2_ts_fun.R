@@ -11,9 +11,14 @@ db2_ts_fun <- function(db, date_range, states, age_groups) {
   
 
   p <- ggplot(db) +
-          geom_line(aes(x = date, y = deaths, color = condition_group), size = 1.5)
+          geom_line(aes(x = date, y = deaths, color = condition_group), size = 1.2) +
+    scale_fill_discrete(name = "Condition Groups")
   
-  p
-  # ggplotly(p)
+  # p
+  
+  p <- p + theme_bw()
+    
+  
+  ggplotly(p)
   
 }

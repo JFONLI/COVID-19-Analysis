@@ -4,90 +4,64 @@ library(shinyWidgets)
 library(shinyBS)
 library(shinyjs)
 
+library(maps)
+library(mapproj)
+library(shiny)
+library(lubridate)
+library(usmap)
+library(plotly)
+library(corrplot)
+
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(ggrepel)
 
 
-ui <- dashboardPage(
-  dashboardHeader(),
-  dashboardSidebar(),
-  dashboardBody(
-    useShinyjs(),
-    fluidRow(
-      column(
-        width = 12,
-        bsButton("patients", 
-                 label = "PATIENTS", 
-                 icon = icon("table"), 
-                 style = "success"),
-        bsButton("antimicrobials", 
-                 label = "ANTIMICROBIALS", 
-                 icon = icon("table"), 
-                 style = "success"),
-        bsButton("diagnostics", 
-                 label = "DIAGNOSTICS", 
-                 icon = icon("flask", class = "flask-box"), 
-                 style = "success"),
-        bsButton("outcome", 
-                 label = "OUTCOME", 
-                 icon = icon("table"), 
-                 style = "success")
-      )
+body <- dashboardBody(
+  fluidRow(
+    box(title = "Box title", "Box content"),
+    box(status = "warning", "Box content")
+  ),
+  
+  fluidRow(
+    box(
+      title = "Title 1", width = 4, solidHeader = TRUE, status = "primary",
+      "Box content"
     ),
-    fluidRow(
-      div(
-        id = "db1_panel",
-        column(
-          width = 12,
-          h2("Hello p1 fun")
-        ),
-        column(
-          width = 6,
-          h2("Hello p2 fun")
-        ),
-        column(
-          width = 6,
-          h2("Hello p3 fun")
-        )
-      )
+    box(
+      title = "Title 2", width = 4, solidHeader = TRUE,
+      "Box content"
     ),
-    fluidRow(
-      div(
-        id = "db2_panel",
-        column(
-          width = 12,
-          h2("Hello p1 2")
-        ),
-        column(
-          width = 6,
-          h2("Hello p2 2")
-        ),
-        column(
-          width = 6,
-          h2("Hello p3 2")
-        )
-      )
+    box(
+      title = "Title 1", width = 4, solidHeader = TRUE, status = "warning",
+      "Box content"
+    )
+  ),
+  
+  fluidRow(
+    box(
+      width = 4, background = "black",
+      "A box with a solid black background"
+    ),
+    box(
+      title = "Title 5", width = 4, background = "light-blue",
+      "A box with a solid light-blue background"
+    ),
+    box(
+      title = "Title 6",width = 4, background = "maroon",
+      "A box with a solid maroon background"
     )
   )
 )
 
-server <- function(input, output){
-  observeEvent("", {
-    shinyjs::show("db1_panel")
-    shinyjs::hide("db2_panel")
-  })
-  
-  observeEvent(input$patients, {
-    shinyjs::show("db1_panel")
-    shinyjs::hide("db2_panel")
-  })
-  
-  observeEvent(input$antimicrobials, {
-    shinyjs::hide("db1_panel")
-    shinyjs::show("db2_panel")
-  })
-}
+# We'll save it in a variable `ui` so that we can preview it in the console
+ui <- dashboardPage(
+  dashboardHeader(title = "Row layout"),
+  dashboardSidebar(),
+  body
+)
 
-
-
-
-
-shinyApp(ui, server)
+# Preview the UI in the console
+shinyApp(ui = ui, server = function(input, output) { })

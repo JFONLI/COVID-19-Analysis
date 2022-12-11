@@ -75,13 +75,33 @@ count_death_cleaned_visual_2 <- readRDS("www/data/count_death_cleaned_visual_2.R
 count_death_cleaned_model
 count_death_cleaned_visual_1
 count_death_cleaned_visual_2
+
+db1_age_groups <- as.character(unique(count_death_cleaned_model$age_group))
+db1_age_groups                               
 ```
 
 # KPI Card
 ```{r}
 count_death_cleaned_model
+
+
 count_death_cleaned_visual_1
-count_death_cleaned_visual_2
+kpi <- count_death_cleaned_model
+count_death_cleaned_model
+kpi <- kpi %>% mutate("date" = make_date(year = year_death, month = month_death))
+kpi <- kpi %>% subset(select = c("date", "race", "age_group", "cause_all", "cause_other", "COVID-19 (U071, Underlying Cause of Death)"))
+kpi
+## filter race & age_group
+kpi_values <- c(0,0,0)
+
+kpi_values[1] <- round(sum(kpi$cause_all)/332000000 * 100, 1)
+kpi_values[2] <- round(sum(kpi$cause_other)/332000000 * 100, 1)
+kpi_values[3] <- round(sum(kpi$`COVID-19 (U071, Underlying Cause of Death)`)/332000000 * 100, 1)
+
+kpi_values
+
+?validStatuses
+
 ```
 
 
@@ -596,8 +616,33 @@ temp <- temp %>% filter(!state %in% c("United States", "New York City", "Puerto 
 temp <- temp %>% filter(state == "California")
 temp
 
+max(temp$tot_cases)
+max
+
+ylim.cases <- c(0, max(temp$tot_cases))
+ylim.deaths <- c(0, max(temp$new_case))
+
+b <- diff(ylim.cases)/diff(ylim.deaths)
+a <- ylim.cases[1] - b*ylim.deaths[1]
+
+ggplot(temp, aes(x = date, y = tot_cases)) +
+  geom_area(fill = "blue") +
+  geom_area(aes(y = a + new_case*b), color = "red", fill = "red") +
+  scale_y_continuous("Total Cases", sec.axis = sec_axis(~ (. - a)/b, name = "New Cases")) +
+  theme(
+    axis.line.y.right = element_line(color = "red"), 
+    axis.ticks.y.right = element_line(color = "red"),
+    axis.text.y.right = element_text(color = "red"), 
+    axis.title.y.right = element_text(color = "red"),
+    
+    axis.line.y.left = element_line(color = "blue"), 
+    axis.ticks.y.left = element_line(color = "blue"),
+    axis.text.y.left = element_text(color = "blue"), 
+    axis.title.y.left = element_text(color = "blue")
+  )
+
 ggplot(temp, aes(x = date)) +
-  geom_area(aes(y = tot_cases), color = "blue", fill = "blue", size = 1) +
+  geom_area(aes(y = tot_cases), color = "blue", fill = "blue", size = 1) 
   geom_area(aes(y = new_case), color = "red", fill = "red", size = 1) 
 
 ```

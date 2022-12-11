@@ -43,17 +43,21 @@ covi_data_cleaned_visual <- readRDS("www/data/covi_data_cleaned_visual.RDS")
 
 
 # Source helper functions -----
+# source("www/functions/db1_kpi_fun.R")
 source("www/functions/db1_cor_fun.R")
 source("www/functions/db1_loli_fun.R")
 source("www/functions/db1_bar_fun.R")
 
 ## Dataset 2
+source("www/functions/db2_kpi_fun.R")
 source("www/functions/db2_map_fun.R")
 source("www/functions/db2_loli_fun.R")
 source("www/functions/db2_bar_fun.R")
 source("www/functions/db2_ts_fun.R")
 
+
 ## Dataset 3
+source("www/functions/db3_kpi_fun.R")
 source("www/functions/db3_map_fun.R")
 source("www/functions/db3_heat_fun.R")
 source("www/functions/db3_ts_fun.R")
@@ -285,9 +289,9 @@ ui <- dashboardPage(
         id = "db2_panel",
         column(
           width = 12,
-          valueBox(20, "New Orders", icon = icon("credit-card")),
-          valueBox(20, "New Orders", icon = icon("credit-card")),
-          valueBox(20, "New Orders", icon = icon("credit-card"))
+          valueBoxOutput("db2_kpi_1"),
+          valueBoxOutput("db2_kpi_2"),
+          valueBoxOutput("db2_kpi_3")
         ),
         column(
           width = 6,
@@ -319,9 +323,8 @@ ui <- dashboardPage(
         id = "db3_panel",
         column(
           width = 12,
-          valueBox(20, "New Orders", icon = icon("credit-card")),
-          valueBox(20, "New Orders", icon = icon("credit-card")),
-          valueBox(20, "New Orders", icon = icon("credit-card"))
+          valueBoxOutput("db3_kpi_1"),
+          valueBoxOutput("db3_kpi_2")
         ),
         column(
           width = 6,
@@ -434,6 +437,33 @@ server <- function(input, output){
     values$db2_condition <- input$db2_condition
     values$db2_age <- input$db2_age
     values$db2_state <- input$db2_state
+    
+    # Dataset 2 KPI
+    values$db2_kpi <- db2_kpi_fun(condition_covi_cleaned, 
+                                  values$db2_date,
+                                  values$db2_state,
+                                  values$db2_age)
+    
+    output$db2_kpi_1 <- renderValueBox({
+      valueBox(
+        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("thumbs-up", lib = "glyphicon"),
+        color = "yellow"
+      )
+    })
+    
+    output$db2_kpi_2 <- renderValueBox({
+      valueBox(
+        paste(values$db2_kpi[[1]][2], "%"), values$db2_kpi[[2]][2], icon = icon("thumbs-up", lib = "glyphicon"),
+        color = "yellow"
+      )
+    })
+    
+    output$db2_kpi_3 <- renderValueBox({
+      valueBox(
+        paste(values$db2_kpi[[1]][3], "%"), values$db2_kpi[[2]][3], icon = icon("thumbs-up", lib = "glyphicon"),
+        color = "yellow"
+      )
+    })
   
     # Dataset 2 Map
     output$db2_map <- renderPlot({
@@ -483,6 +513,22 @@ server <- function(input, output){
     values$db3_state <- input$db3_state
     values$db3_choice <- input$db3_choice
     
+    # Dataset 3 KPI
+    values$db3_kpi <- db3_kpi_fun(covi_data_cleaned_visual, values$db3_date, values$db3_state)
+    
+    output$db3_kpi_1 <- renderValueBox({
+      valueBox(
+        paste(values$db3_kpi[1], "%"), "Cases Rate", icon = icon("thumbs-up", lib = "glyphicon"),
+        color = "yellow"
+      )
+    })
+    
+    output$db3_kpi_2 <- renderValueBox({
+      valueBox(
+        paste(values$db3_kpi[2], "%"), "Deaths Rate", icon = icon("thumbs-up", lib = "glyphicon"),
+        color = "yellow"
+      )
+    })
     
     # Dataset 3 Map
     output$db3_map <- renderPlot({

@@ -77,6 +77,14 @@ count_death_cleaned_visual_1
 count_death_cleaned_visual_2
 ```
 
+# KPI Card
+```{r}
+count_death_cleaned_model
+count_death_cleaned_visual_1
+count_death_cleaned_visual_2
+```
+
+
 ## Correlation Map
 ```{r}
 diseases <- colnames(count_death_cleaned_model)[c(8,9,12:23)]
@@ -235,6 +243,46 @@ sizes
 condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.RDS")
 condition_covi_cleaned$state %>% unique()
 ```
+# KPI Card
+```{r}
+kpi <- condition_covi_cleaned
+kpi <- kpi %>% filter(group == "By Month" & state != "United State")
+kpi$covi_death[is.na(kpi$covi_death)] <- 0
+kpi <- kpi %>% mutate("date" = make_date(year = year, month = month))
+# filter by state
+kpi <- subset(kpi, select = c("date", "condition_group", "age_group", "covi_death"))
+#filter by date and age
+
+
+kpi <- kpi %>% group_by(condition_group) %>% summarise(total_deaths <- sum(covi_death))
+colnames(kpi)[2] = "deaths"
+kpi$total_deaths <- sum(kpi$deaths)
+kpi$percent_100 <- round(kpi$deaths / kpi$total_deaths * 100, 1)
+kpi <- kpi %>% arrange(desc(percent_100))
+kpi
+
+kpi_values <- c(0, 0, 0)
+kpi_text <- c("", "", "")
+kpi_values[1] <- kpi$percent_100[kpi$condition_group == "COVID-19"]
+kpi_text[1] <- "COVID-19"
+
+
+
+kpi <- kpi %>% filter(condition_group != "COVID-19")
+
+kpi_values[2] <- as.numeric(kpi[1, 4])
+kpi_values[3] <- as.numeric(kpi[2, 4])
+kpi_text[2] <- as.character(kpi$condition_group[1])
+kpi_text[3] <- as.character(kpi$condition_group[2])
+kpi_values
+
+kpi_text
+list(kpi_values, kpi_text)[[1]][1]
+
+
+
+```
+
 
 # Map 
 ```{r}
@@ -429,21 +477,30 @@ covi_data_cleaned_model
 covi_data_cleaned_visual
 ```
 ## Clear Data
-clean unused states
+
+## KPI
 ```{r}
-states <- c("alabama", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "district of columbia", 
-            "florida", "georgia", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
-            "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska",
-            "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
-            "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "washington",
-            "west virginia", "wisconsin", "wyoming")
-temp <- covi_data_cleaned_model %>% filter(tolower(covi_data_cleaned_model$state) %in% states)
-temp$state %>% unique()
-temp <- temp %>% group_by(date, state) %>% summarise(total_cases <- sum(tot_cases),
-                                      new_case <- sum(new_case))
-colnames(temp) <- c("date", "state", "total_cases", "new_cases")
-temp
+covi_data_cleaned_visual
+kpi <- covi_data_cleaned_visual
+kpi
+# filter date
+# filter state
+
+kpi_cases <- kpi %>% filter(number_type == "new_case")
+kpi_cases <- sum(kpi_cases$number_value)
+kpi_cases <- round(kpi_cases/332000000 * 100, 1)
+
+kpi_deaths <- kpi %>% filter(number_type == "new_death")
+kpi_deaths <- sum(kpi_deaths$number_value)
+kpi_deaths <- round(kpi_deaths/332000000 * 100, 1)
+
+kpi_values <- c(0, 0)
+kpi_values[1] <- kpi_cases
+kpi_values[2] <- kpi_deaths
+kpi_values
+
 ```
+
 
 
 

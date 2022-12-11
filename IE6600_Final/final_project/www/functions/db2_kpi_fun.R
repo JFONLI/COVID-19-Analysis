@@ -2,7 +2,7 @@
 
 
 db2_kpi_fun <- function(kpi, date_range, states, age_choices) {
-  kpi <- condition_covi_cleaned
+  # kpi <- condition_covi_cleaned
   kpi <- kpi %>% filter(group == "By Month" & state != "United State")
   kpi$covi_death[is.na(kpi$covi_death)] <- 0
   kpi <- kpi %>% mutate("date" = make_date(year = year, month = month))

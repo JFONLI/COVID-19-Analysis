@@ -41,7 +41,7 @@ ui <- dashboardPage(
                    style = "success"),
           bsButton("antimicrobials", 
                    label = "ANTIMICROBIALS", 
-                   icon = icon("spinner", class = "spinner-box"), 
+                   icon = icon("table"), 
                    style = "success"),
           bsButton("diagnostics", 
                    label = "DIAGNOSTICS", 
@@ -49,7 +49,7 @@ ui <- dashboardPage(
                    style = "success"),
           bsButton("outcome", 
                    label = "OUTCOME", 
-                   icon = icon("thumbs-o-up"), 
+                   icon = icon("table"), 
                    style = "success")
         )
     ),

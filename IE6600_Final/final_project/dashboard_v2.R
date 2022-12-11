@@ -1,9 +1,23 @@
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 library(shinyBS)
 library(shinyjs)
 
-source("www/functions/fluid_design.R")
+library(maps)
+library(mapproj)
+library(shiny)
+library(lubridate)
+library(usmap)
+library(plotly)
+library(corrplot)
+
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(ggrepel)
+
 
 # Constant variable
 # New York City
@@ -326,18 +340,20 @@ ui <- dashboardPage(
           valueBoxOutput("db3_kpi_1"),
           valueBoxOutput("db3_kpi_2")
         ),
-        column(
-          width = 6,
-          box(
-            title = "Map",
-            plotOutput("db3_map")
-          )
-        ),
-        column(
-          width = 6,
-          box(
-            title = "Heat Map",
-            plotOutput("db3_heat")
+        fluidRow(
+          column(
+            width = 10,
+            box(
+              title = "Map",
+              plotOutput("db3_map")
+            )
+          ),
+          column(
+            width = 10,
+            box(
+              title = "Heat Map",
+              plotOutput("db3_heat")
+            )
           )
         ),
         column(
@@ -359,39 +375,39 @@ server <- function(input, output){
   )
   
   observeEvent("", {
-    show("db1_ui")
-    show("db1_panel")
-    hide("db2_ui")
-    hide("db2_panel")
-    hide("db3_ui")
-    hide("db3_panel")
+    shinyjs::show("db1_ui")
+    shinyjs::show("db1_panel")
+    shinyjs::hide("db2_ui")
+    shinyjs::hide("db2_panel")
+    shinyjs::hide("db3_ui")
+    shinyjs::hide("db3_panel")
   })
   
   observeEvent(input$dataset1, {
-    show("db1_ui")
-    show("db1_panel")
-    hide("db2_ui")
-    hide("db2_panel")
-    hide("db3_ui")
-    hide("db3_panel")
+    shinyjs::show("db1_ui")
+    shinyjs::show("db1_panel")
+    shinyjs::hide("db2_ui")
+    shinyjs::hide("db2_panel")
+    shinyjs::hide("db3_ui")
+    shinyjs::hide("db3_panel")
   })
   
   observeEvent(input$dataset2, {
-    hide("db1_ui")
-    hide("db1_panel")
-    show("db2_ui")
-    show("db2_panel")
-    hide("db3_ui")
-    hide("db3_panel")
+    shinyjs::hide("db1_ui")
+    shinyjs::hide("db1_panel")
+    shinyjs::show("db2_ui")
+    shinyjs::show("db2_panel")
+    shinyjs::hide("db3_ui")
+    shinyjs::hide("db3_panel")
   })
   
   observeEvent(input$dataset3, {
-    hide("db1_ui")
-    hide("db1_panel")
-    hide("db2_ui")
-    hide("db2_panel")
-    show("db3_ui")
-    show("db3_panel")
+    shinyjs::hide("db1_ui")
+    shinyjs::hide("db1_panel")
+    shinyjs::hide("db2_ui")
+    shinyjs::hide("db2_panel")
+    shinyjs::show("db3_ui")
+    shinyjs::show("db3_panel")
   })
   
   
@@ -446,7 +462,7 @@ server <- function(input, output){
     
     output$db2_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("credit-card"),
         color = "yellow"
       )
     })

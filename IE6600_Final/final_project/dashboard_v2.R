@@ -3,6 +3,7 @@ library(shinydashboard)
 library(shinyWidgets)
 library(shinyBS)
 library(shinyjs)
+library(shinycssloaders)
 
 library(maps)
 library(mapproj)
@@ -95,14 +96,15 @@ source("www/functions/pred_kpi_fun.R")
 
 ui <- dashboardPage(
   skin = "red",
-  dashboardHeader(title = "COVID-19 SUMMARY"),
-  
+  dashboardHeader(title = "COVID-19 SUMMARY", titleWidth = 250),
   dashboardSidebar(
+    width = 250,
     div(
       id = "db1_ui",
       sidebarMenu(
         menuItem(
           "Date",
+          icon = icon("calendar"),
           sliderInput(
             "db1_date",
             "",
@@ -115,6 +117,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Sex",
+          icon = icon("venus-mars"),
           pickerInput(
             "db1_sex",
             "",
@@ -134,6 +137,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Race",
+          icon = icon("dna"),
           pickerInput(
             "db1_race",
             "",
@@ -150,6 +154,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Age Group",
+          icon = icon("person-cane"),
           pickerInput(
             "db1_age",
             "",
@@ -172,6 +177,7 @@ ui <- dashboardPage(
       sidebarMenu(
         menuItem(
           "Date",
+          icon = icon("calendar"),
           sliderInput(
             "db2_date",
             "",
@@ -184,6 +190,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Condition Group",
+          icon = icon("disease"),
           pickerInput(
             "db2_condition",
             "",
@@ -200,6 +207,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Age Group",
+          icon = icon("person-cane"),
           pickerInput(
             "db2_age",
             "",
@@ -216,6 +224,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "States",
+          icon = icon("map-pin"),
           pickerInput(
             "db2_state",
             "",
@@ -238,6 +247,7 @@ ui <- dashboardPage(
       sidebarMenu(
         menuItem(
           "Date",
+          icon = icon("calendar"),
           sliderInput(
             "db3_date",
             "",
@@ -250,6 +260,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "States",
+          icon = icon("map-pin"),
           pickerInput(
             "db3_state",
             "",
@@ -266,6 +277,7 @@ ui <- dashboardPage(
         ),
         menuItem(
           "Choices",
+          icon = icon("square-check"),
           selectInput(
             "db3_choice",
             "",
@@ -284,6 +296,7 @@ ui <- dashboardPage(
       sidebarMenu(
         menuItem(
           "State",
+          icon = icon("map-pin"),
           selectInput(
             "pred_state",
             "",
@@ -302,27 +315,43 @@ ui <- dashboardPage(
   dashboardBody(
     useShinyjs(),
     fluidRow(
-      column(
-        width = 12,
+      column(3, 
         bsButton("dataset1", 
                  label = "Dataset 1", 
-                 icon = icon("table"), 
-                 style = "success"),
-        bsButton("dataset2", 
-                 label = "Dataset 2", 
-                 icon = icon("table"), 
-                 style = "success"),
-        bsButton("dataset3", 
-                 label = "Dataset 3", 
-                 icon = icon("table"), 
-                 style = "success"),
-        bsButton("prediction", 
-                 label = "Future Prediction", 
-                 icon = icon("table"), 
-                 style = "success"),
+                 icon = icon("database"), 
+                 style = "success",
+                 size = "large",
+                 width = "100%")
+      ),
+      column(3, 
+             bsButton("dataset2", 
+                      label = "Dataset 2", 
+                      icon = icon("database"), 
+                      style = "success",
+                      size = "large",
+                      width = "100%")
+      ),
+      column(3, 
+             bsButton("dataset3", 
+                      label = "Dataset 3", 
+                      icon = icon("database"), 
+                      style = "success",
+                      size = "large",
+                      width = "100%")
+      ),
+      column(3, 
+             bsButton("prediction", 
+                      label = "Future Prediction", 
+                      icon = icon("table"), 
+                      style = "success",
+                      size = "large",
+                      width = "100%")
       )
+      
+      
+      
     ),
-    br(),
+      
     br(),
     
     div(
@@ -342,7 +371,7 @@ ui <- dashboardPage(
     div(
       id = "db1_panel",
       fluidRow(
-        valueBoxOutput("db1_kpi_1"),
+        valueBoxOutput("db1_kpi_1") %>% withSpinner(color="#0dc5c1"),
         valueBoxOutput("db1_kpi_2"),
         valueBoxOutput("db1_kpi_3")
       ),
@@ -352,7 +381,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db1_cor")
+          plotOutput("db1_cor") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
@@ -363,9 +392,9 @@ ui <- dashboardPage(
           collapsible = TRUE,
           title = "Bar Chart",
           fluidRow(
-            splitLayout(cellWidths = c("50%", "50%"), 
-                        plotOutput("db1_loli"),
-                        plotOutput("db1_bar"))
+            splitLayout(cellWidths = c("35%", "35%"), 
+                        plotOutput("db1_loli") %>% withSpinner(color="#0dc5c1"),
+                        plotOutput("db1_bar") %>% withSpinner(color="#0dc5c1"))
           )
         )
       )
@@ -386,7 +415,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db2_map")
+          plotOutput("db2_map") %>% withSpinner(color="#0dc5c1")
         ),
         box(
           width = 6,
@@ -394,7 +423,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db2_ts")
+          plotOutput("db2_ts") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
@@ -406,8 +435,8 @@ ui <- dashboardPage(
           collapsible = TRUE,
           fluidRow(
             splitLayout(cellWidths = c("50%", "50%"), 
-                        plotOutput("db2_loli"),
-                        plotOutput("db2_bar"))
+                        plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1"),
+                        plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
           )
         )
       )
@@ -426,7 +455,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_map")
+          plotOutput("db3_map") %>% withSpinner(color="#0dc5c1")
         ),
         box(
           width = 6,
@@ -434,7 +463,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_ts")
+          plotOutput("db3_ts") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
@@ -444,7 +473,7 @@ ui <- dashboardPage(
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotOutput("db3_heat")
+          plotOutput("db3_heat") %>% withSpinner(color="#0dc5c1")
         )
       )
     )
@@ -580,21 +609,21 @@ server <- function(input, output){
     
     output$db1_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[1], "%"), "Death Rates", icon = icon("credit-card"),
+        paste(values$db1_kpi[1], "%"), "Death Rates", icon = icon("skull-crossbones"),
         color = "yellow"
       )
     })
     
     output$db1_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[2], "%"), "Accidents Rates", icon = icon("credit-card"),
+        paste(values$db1_kpi[2], "%"), "Accidents Death Rates", icon = icon("person-falling-burst"),
         color = "yellow"
       )
     })
     
     output$db1_kpi_3 <- renderValueBox({
       valueBox(
-        paste(values$db1_kpi[3], "%"), "Accidents Rates", icon = icon("credit-card"),
+        paste(values$db1_kpi[3], "%"), "COVID-19 Death Rates", icon = icon("virus-covid"),
         color = "yellow"
       )
     })
@@ -644,21 +673,21 @@ server <- function(input, output){
     
     output$db2_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("credit-card"),
+        paste(values$db2_kpi[[1]][1], "%"), values$db2_kpi[[2]][1], icon = icon("virus-covid"),
         color = "yellow"
       )
     })
     
     output$db2_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][2], "%"), values$db2_kpi[[2]][2], icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$db2_kpi[[1]][2], "%"), values$db2_kpi[[2]][2], icon = icon("ranking-star"),
         color = "yellow"
       )
     })
     
     output$db2_kpi_3 <- renderValueBox({
       valueBox(
-        paste(values$db2_kpi[[1]][3], "%"), values$db2_kpi[[2]][3], icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$db2_kpi[[1]][3], "%"), values$db2_kpi[[2]][3], icon = icon("ranking-star"),
         color = "yellow"
       )
     })
@@ -716,14 +745,14 @@ server <- function(input, output){
     
     output$db3_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$db3_kpi[1], "%"), "Cases Rate", icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$db3_kpi[1], "%"), "COVID-19 Cases Rate", icon = icon("head-side-mask"),
         color = "yellow"
       )
     })
     
     output$db3_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$db3_kpi[2], "%"), "Deaths Rate", icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$db3_kpi[2], "%"), "COVID-19 Deaths Rate", icon = icon("face-dizzy"),
         color = "yellow"
       )
     })
@@ -768,23 +797,23 @@ server <- function(input, output){
 
     values$pred_kpi <- pred_kpi_fun(covi_data_new, values$pred_state)
     
+    output$pred_kpi_3 <- renderValueBox({
+      valueBox(
+        paste(values$pred_kpi[1]), "Sum of COVID-19 Cases for Future 100 Days", icon = icon("viruses"),
+        color = "yellow"
+      )
+    })
+    
     output$pred_kpi_1 <- renderValueBox({
       valueBox(
-        paste(values$pred_kpi[1]), "Sum of COVID-19 for Future 100 Days", icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$pred_kpi[2]), "Updated New Case 2022/10/17", icon = icon("download"),
         color = "yellow"
       )
     })
     
     output$pred_kpi_2 <- renderValueBox({
       valueBox(
-        paste(values$pred_kpi[2]), "Updated New Case 2022/10/17", icon = icon("thumbs-up", lib = "glyphicon"),
-        color = "yellow"
-      )
-    })
-    
-    output$pred_kpi_3 <- renderValueBox({
-      valueBox(
-        paste(values$pred_kpi[3]), "COVID-19 for Future 100 Days 2023/01/25", icon = icon("thumbs-up", lib = "glyphicon"),
+        paste(values$pred_kpi[3]), "COVID-19 Cases after 100 Days 2023/01/25", icon = icon("arrow-right"),
         color = "yellow"
       )
     })
@@ -805,11 +834,11 @@ server <- function(input, output){
   
   
   
-  output$aaa <- renderPrint({
-    # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
-    # values$db2_age
-    values$db3_choice == "Cases"
-  })
+  # output$aaa <- renderPrint({
+  #   # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
+  #   # values$db2_age
+  #   values$db3_choice == "Cases"
+  # })
   
 }
 

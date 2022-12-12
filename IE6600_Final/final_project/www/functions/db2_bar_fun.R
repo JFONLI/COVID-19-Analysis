@@ -31,8 +31,8 @@ db2_bar_fun <- function(loli, date_range, states, age_choices) {
   shades <- rev(shades)
   
   ggplot(loli) +
-    geom_col(aes(x = deaths, y = condition_group, fill = age_group), position = "fill") +
-    scale_fill_manual(values = shades) + 
+    geom_col(aes(x = deaths, y = condition_group, fill = age_group), position = "fill", alpha = 0.5) +
+    # scale_fill_manual(values = shades) + 
     theme(
       axis.title = element_blank(),
       axis.text = element_blank(),

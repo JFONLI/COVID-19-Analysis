@@ -4,6 +4,7 @@ library(shinyWidgets)
 library(shinyBS)
 library(shinyjs)
 library(shinycssloaders)
+library(rintrojs)
 
 library(maps)
 library(mapproj)
@@ -20,9 +21,10 @@ library(ggpubr)
 library(ggrepel)
 library(ggExtra)
 library(tidyr)
-library(Hmisc)
+# library(Hmisc)
 library(GGally)
 library(scales)
+library(viridis)
 
 
 # Constant variable
@@ -73,12 +75,15 @@ covi_data_new = covi_data_new[order(covi_data_new$state),]
 stateList = c(unique(covi_data_new['state']))
 stateList = stateList[[1]]
 
+# intro <- read_csv2("www/data/intro.csv")
+
 
 # Source helper functions -----
 source("www/functions/db1_kpi_fun.R")
 source("www/functions/db1_cor_fun.R")
 source("www/functions/db1_loli_fun.R")
 source("www/functions/db1_bar_fun.R")
+source("www/functions/db1_ts_fun.R")
 
 ## Dataset 2
 source("www/functions/db2_kpi_fun.R")
@@ -99,90 +104,110 @@ source("www/functions/pred_line_fun.R")
 source("www/functions/pred_kpi_fun.R")
 
 
+
+
 ui <- dashboardPage(
   skin = "blue",
-  dashboardHeader(title = "COVID-19 SUMMARY", titleWidth = 250),
-  dashboardSidebar(
-    width = 250,
-    div(
-      id = "db1_ui",
-      sidebarMenu(
-        menuItem(
-          "Date",
-          icon = icon("calendar"),
-          sliderInput(
-            "db1_date",
-            "",
-            min = as.Date("2019-01-01", "%Y-%m-%d"),
-            max = as.Date("2021-09-01", "%Y-%m-%d"),
-            step = 30,
-            value = c(as.Date("2019-01-01", "%Y-%m-%d"), as.Date("2021-09-01", "%Y-%m-%d")),
-            timeFormat = "%b %Y"
-          ),
-          br()
-        ),
-        menuItem(
-          "Sex",
-          icon = icon("venus-mars"),
-          pickerInput(
-            "db1_sex",
-            "",
-            choices = c(
-              "male",
-              "female"
-            ),
-            selected = c("male", "female"),
-            multiple = TRUE,
-            options = pickerOptions(
-              actionsBox = TRUE,
-              title = "Select Sex",
-              headr = "Sex"
-            )
-          ),
-          br()
-        ),
-        menuItem(
-          "Race",
-          icon = icon("dna"),
-          pickerInput(
-            "db1_race",
-            "",
-            choices = races,
-            multiple = TRUE,
-            selected = races,
-            options = pickerOptions(
-              actionsBox = TRUE,
-              title = "Please select Races",
-              # title = as.character(length(input$condition_group)),
-              header = "Races"
-            )
-          ),
-          br()
-        ),
-        menuItem(
-          "Age Group",
-          icon = icon("person-cane"),
-          pickerInput(
-            "db1_age",
-            "",
-            choices = db1_age_groups,
-            multiple = TRUE,
-            selected = db1_age_groups,
-            options = pickerOptions(
-              actionsBox = TRUE,
-              title = "Please select age groups",
-              # title = as.character(length(input$condition_group)),
-              header = "Age Groups"
-            )
-          ),
-          br()
-        )
-        
+  dashboardHeader(
+    title = span(img(src = "icon11.png", height = 35), "COVID-19 SUMMARY"),
+    titleWidth = 300,
+    dropdownMenu(
+      type = "notifications", 
+      headerText = strong("CODE DICTIONARY"), 
+      icon = icon("circle-info"), 
+      badgeStatus = NULL,
+      notificationItem(
+        text = "(I00-I09)"
       )
-    ),
+    )
+  ),
+  dashboardSidebar(
+    introjsUI(),
+    width = 300,
+   introBox(
+      div(
+        id = "db1_ui",
+        sidebarMenu(
+          HTML('<br><center><img src="filter.png" width ="100"></center>'),
+          menuItem(
+            "Date",
+            icon = icon("calendar"),
+            sliderInput(
+              "db1_date",
+              "",
+              min = as.Date("2019-01-01", "%Y-%m-%d"),
+              max = as.Date("2021-09-01", "%Y-%m-%d"),
+              step = 30,
+              value = c(as.Date("2019-01-01", "%Y-%m-%d"), as.Date("2021-09-01", "%Y-%m-%d")),
+              timeFormat = "%b %Y"
+            ),
+            br()
+          ),
+          menuItem(
+            "Sex",
+            icon = icon("venus-mars"),
+            pickerInput(
+              "db1_sex",
+              "",
+              choices = c(
+                "male",
+                "female"
+              ),
+              selected = c("male", "female"),
+              multiple = TRUE,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Select Sex",
+                headr = "Sex"
+              )
+            ),
+            br()
+          ),
+          menuItem(
+            "Race",
+            icon = icon("dna"),
+            pickerInput(
+              "db1_race",
+              "",
+              choices = races,
+              multiple = TRUE,
+              selected = races,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select Races",
+                # title = as.character(length(input$condition_group)),
+                header = "Races"
+              )
+            ),
+            br()
+          ),
+          menuItem(
+            "Age Group",
+            icon = icon("person-cane"),
+            pickerInput(
+              "db1_age",
+              "",
+              choices = db1_age_groups,
+              multiple = TRUE,
+              selected = db1_age_groups,
+              options = pickerOptions(
+                actionsBox = TRUE,
+                title = "Please select age groups",
+                # title = as.character(length(input$condition_group)),
+                header = "Age Groups"
+              )
+            ),
+            br()
+          )
+
+        )
+      ), 
+     data.step = 1, data.intro = "intro$text[1]"),
+
     div(
       id = "db2_ui",
       sidebarMenu(
+        # HTML('<br><center><img src="filter.png" width ="100"></center>'),
         menuItem(
           "Date",
           icon = icon("calendar"),
@@ -253,10 +278,11 @@ ui <- dashboardPage(
         )
       )
     ),
-    
+
     div(
       id = "db3_ui",
       sidebarMenu(
+        HTML('<br><center><img src="filter.png" width ="100"></center>'),
         menuItem(
           "Date",
           icon = icon("calendar"),
@@ -303,12 +329,16 @@ ui <- dashboardPage(
           ),
           br()
         )
+
       )
+
+
     ),
-    
+
     div(
       id = "pred_ui",
       sidebarMenu(
+        HTML('<br><center><img src="filter.png" width ="100"></center>'),
         menuItem(
           "State",
           icon = icon("map-pin"),
@@ -322,54 +352,59 @@ ui <- dashboardPage(
         )
       )
     ),
-    
+
     verbatimTextOutput("aaa")
   ),
-  
-  
-  
+
+
+
   dashboardBody(
     useShinyjs(),
-    fluidRow(
-      column(3, 
-        bsButton("dataset1", 
-                 label = "US Mortality", 
-                 icon = icon("database"), 
-                 style = "primary",
-                 size = "large",
-                 width = "100%")
+    introjsUI(),
+    tags$style(HTML(".sidebar-menu li a { font-size: 25px; }")),
+   introBox(
+      fluidRow(
+        column(3,
+               bsButton("dataset1",
+                        label = "US Mortality",
+                        icon = icon("database"),
+                        style = "primary",
+                        size = "large",
+                        width = "100%")
+        ),
+        column(3,
+               bsButton("dataset2",
+                        label = "COVID-19 Deaths & Conditions",
+                        icon = icon("database"),
+                        style = "primary",
+                        size = "large",
+                        width = "100%")
+        ),
+        column(3,
+               bsButton("dataset3",
+                        label = "COVID-19 Cases & Deaths",
+                        icon = icon("database"),
+                        style = "primary",
+                        size = "large",
+                        width = "100%")
+        ),
+        column(3,
+               bsButton("prediction",
+                        label = "Future COVID-19 Cases Prediction",
+                        icon = icon("table"),
+                        style = "primary",
+                        size = "large",
+                        width = "100%")
+        )
+
+
+
       ),
-      column(3, 
-             bsButton("dataset2", 
-                      label = "COVID-19 Deaths & Conditions", 
-                      icon = icon("database"), 
-                      style = "primary",
-                      size = "large",
-                      width = "100%")
-      ),
-      column(3, 
-             bsButton("dataset3", 
-                      label = "COVID-19 Cases & Deaths", 
-                      icon = icon("database"), 
-                      style = "primary",
-                      size = "large",
-                      width = "100%")
-      ),
-      column(3, 
-             bsButton("prediction", 
-                      label = "Future COVID-19 Cases Prediction", 
-                      icon = icon("table"), 
-                      style = "primary",
-                      size = "large",
-                      width = "100%")
-      )
-      
-      
-      
-    ),
-      
+  data.step = 2, data.intro = "intro$text[2]"),
+
+
     br(),
-    
+
     div(
       id = "pred_panel",
       fluidRow(
@@ -388,39 +423,53 @@ ui <- dashboardPage(
         )
       )
     ),
-    
+
     div(
       id = "db1_panel",
-      fluidRow(
-        valueBoxOutput("db1_kpi_1") %>% withSpinner(color="#0dc5c1"),
-        valueBoxOutput("db1_kpi_2"),
-        valueBoxOutput("db1_kpi_3")
-      ),
-      fluidRow(
-        box(
-          width = 12,
-          status = "primary",
-          solidHeader = TRUE,
-          collapsible = TRUE,
-          title = "Bar Chart",
-          fluidRow(
-            column(8, plotOutput("db1_loli") %>% withSpinner(color="#0dc5c1")),
-            column(4, plotOutput("db1_bar") %>% withSpinner(color="#0dc5c1"))
+      introBox(
+        fluidRow(
+          valueBoxOutput("db1_kpi_1") %>% withSpinner(color="#0dc5c1"),
+          valueBoxOutput("db1_kpi_2"),
+          valueBoxOutput("db1_kpi_3")
+        ),
+      data.step = 3, data.intro = "intro$text[3]"),
+      introBox(
+        fluidRow(
+          box(
+            width = 12,
+            status = "primary",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            title = "Top Mortality by Underlying Health Conditions and Age Groups",
+            fluidRow(
+              column(8, plotOutput("db1_loli") %>% withSpinner(color="#0dc5c1")),
+              column(4, plotOutput("db1_bar") %>% withSpinner(color="#0dc5c1"))
+            )
           )
+        ),
+       data.step = 4, data.intro = "intro$text[4]"),
+        fluidRow(
+          box(
+            width = 4,
+            title = "Correlation Relationship between All Underlying Health Conditions and Covid 19",
+            status = "primary",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            plotOutput("db1_cor") %>% withSpinner(color="#0dc5c1")
+          ),
+          box(
+            width = 8,
+            title = "US Mortality Trends by Year & Underlying Health Conditions",
+            status = "primary",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            plotlyOutput("db1_ts") %>% withSpinner(color="#0dc5c1")
+          ),
+          # HTML('<br><center><img src="icon10.png" width ="400"></center>')
         )
-      ),
-      fluidRow(
-        box(
-          title = "Correlation Map",
-          status = "primary",
-          solidHeader = TRUE,
-          collapsible = TRUE,
-          plotOutput("db1_cor") %>% withSpinner(color="#0dc5c1")
-        )
-      )
     ),
-    
-    
+
+
     div(
       id = "db2_panel",
       fluidRow(
@@ -431,7 +480,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 6,
-          title = "Map",
+          title = "Top Covid-19 Deaths by US States",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -439,7 +488,7 @@ ui <- dashboardPage(
         ),
         box(
           width = 6,
-          title = "Time Series",
+          title = "Covid-19 Death Trends by Year & Underlying Health Conditions",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -449,21 +498,18 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 12,
-          title = "Bar Chart",
+          title = "Top Underlying Health Conditions from Covid-19 Deaths between Healthy & Unhealthy People ",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
           fluidRow(
             column(8, plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1")),
             column(4, plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
-            # splitLayout(cellWidths = c("50%", "50%"), 
-            #             plotOutput("db2_loli") %>% withSpinner(color="#0dc5c1"),
-            #             plotOutput("db2_bar") %>% withSpinner(color="#0dc5c1"))
           )
         )
       )
     ),
-    
+
     div(
       id = "db3_panel",
       fluidRow(
@@ -473,7 +519,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 6,
-          title = "Map",
+          title = "Top Covid-19 Confirmed Cases by US States",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -481,17 +527,17 @@ ui <- dashboardPage(
         ),
         box(
           width = 6,
-          title = "Time Series",
+          title = "Covid-19 Confirmed Cases vs Death Cases",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
-          plotlyOutput("db3_ts") %>% withSpinner(color="#0dc5c1")
+          plotOutput("db3_ts") %>% withSpinner(color="#0dc5c1")
         )
       ),
       fluidRow(
         box(
           width = 12,
-          title = "Heat Map",
+          title = "Covid-19 New Confirmed Cases and New Deaths Variation by Seasonss",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -502,12 +548,12 @@ ui <- dashboardPage(
   )
 )
 
-server <- function(input, output){
+server <- function(input, output, session){
   values <- reactiveValues(
     dataset = NULL,
     plot_type = NULL
   )
-  
+
   observeEvent("", {
     shinyjs::show("db1_ui")
     shinyjs::show("db1_panel")
@@ -518,7 +564,7 @@ server <- function(input, output){
     shinyjs::hide("pred_ui")
     shinyjs::hide("pred_panel")
   })
-  
+
   observeEvent(input$dataset1, {
     shinyjs::show("db1_ui")
     shinyjs::show("db1_panel")
@@ -529,7 +575,7 @@ server <- function(input, output){
     shinyjs::hide("pred_ui")
     shinyjs::hide("pred_panel")
   })
-  
+
   observeEvent(input$dataset2, {
     shinyjs::hide("db1_ui")
     shinyjs::hide("db1_panel")
@@ -540,7 +586,7 @@ server <- function(input, output){
     shinyjs::hide("pred_ui")
     shinyjs::hide("pred_panel")
   })
-  
+
   observeEvent(input$dataset3, {
     shinyjs::hide("db1_ui")
     shinyjs::hide("db1_panel")
@@ -551,7 +597,7 @@ server <- function(input, output){
     shinyjs::hide("pred_ui")
     shinyjs::hide("pred_panel")
   })
-  
+
   observeEvent(input$prediction, {
     shinyjs::hide("db1_ui")
     shinyjs::hide("db1_panel")
@@ -562,16 +608,18 @@ server <- function(input, output){
     shinyjs::show("pred_ui")
     shinyjs::show("pred_panel")
   })
-  
-  
+
+
   observe({
-    
+
+
+
     # Dataset 1 Varibales
     values$db1_date <- input$db1_date
     values$db1_sex <- input$db1_sex
     values$db1_race <- input$db1_race
     values$db1_age <- input$db1_age
-    
+
     # Dataste 1 KPI
     values$db1_kpi <- db1_kpi_fun(
       count_death_cleaned_model,
@@ -580,28 +628,28 @@ server <- function(input, output){
       values$db1_race,
       values$db1_age
     )
-    
+
     output$db1_kpi_1 <- renderValueBox({
       valueBox(
         paste(values$db1_kpi[1], "Deaths"), "Per 100,000 Population", icon = icon("skull-crossbones"),
         color = "purple"
       )
     })
-    
+
     output$db1_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$db1_kpi[2], "Accidents Deaths"), "Per 100,000 Population", icon = icon("person-falling-burst"),
         color = "aqua"
       )
     })
-    
+
     output$db1_kpi_3 <- renderValueBox({
       valueBox(
         paste(values$db1_kpi[3], "COVID-19 Deaths"), "Per 100,000 Population", icon = icon("virus-covid"),
         color = "yellow"
       )
     })
-    
+
     # Dataset 1 Correlation Map
     output$db1_cor <- renderPlot({
       args <- list(
@@ -612,7 +660,19 @@ server <- function(input, output){
       )
       do.call(db1_cor_fun, args)
     })
-    
+
+    # Dataset 1 Time Series
+    output$db1_ts <- renderPlotly({
+      args <- list(
+        count_death_cleaned_visual_2,
+        values$db1_date,
+        values$db1_sex,
+        values$db1_race,
+        values$db1_age
+      )
+      do.call(db1_ts_fun, args)
+    })
+
     # Dataset 1 Loliplot & BarPlot
     output$db1_loli <- renderPlot({
       args <- list(
@@ -624,7 +684,7 @@ server <- function(input, output){
       )
       do.call(db1_loli_fun, args)
     })
-    
+
     output$db1_bar <- renderPlot({
       args <- list(
         count_death_cleaned_visual_2,
@@ -635,13 +695,13 @@ server <- function(input, output){
       )
       do.call(db1_bar_fun, args)
     })
-    
+
     # Dataset 2 Variables
     values$db2_date <- input$db2_date
     values$db2_condition <- input$db2_condition
     values$db2_age <- input$db2_age
     values$db2_state <- input$db2_state
-    
+
     # Dataset 2 KPI
     values$db2_kpi <- db2_kpi_fun(condition_covi_cleaned,
                                   values$db2_date,
@@ -651,14 +711,14 @@ server <- function(input, output){
     output$db2_kpi_1 <- renderValueBox({
       valueBox(
         paste(values$db2_kpi[[1]][1], "%"), paste("% Healthy People Die From", values$db2_kpi[[2]][1]), icon = icon("virus-covid"),
-        color = "yellow"
+        color = "purple"
       )
     })
 
     output$db2_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$db2_kpi[[1]][2], "%"), paste("COVID-19 Death With ",values$db2_kpi[[2]][2]), icon = icon("ranking-star"),
-        color = "yellow"
+        color = "aqua"
       )
     })
 
@@ -668,7 +728,7 @@ server <- function(input, output){
         color = "yellow"
       )
     })
-  
+
     # Dataset 2 Map
     output$db2_map <- renderPlotly({
       args <- list(
@@ -682,6 +742,15 @@ server <- function(input, output){
 
     # Dataset 2 Time Series
     output$db2_ts <- renderPlotly({
+      validate(
+        need(values$db2_condition != "", "Please select Condition Groups")
+      )
+      validate(
+        need(values$db2_age != "", "Please select Age Group")
+      )
+      validate(
+        need(values$db2_state != "", "Please select States")
+      )
       args <- list(
         condition_covi_cleaned[,-11] %>% filter(group == "By Month"),
         values$db2_date,
@@ -690,9 +759,18 @@ server <- function(input, output){
       )
       do.call(db2_ts_fun, args)
     })
-    
+
     # Dataset 2 Loliplot & Barplot
     output$db2_loli <- renderPlot({
+      validate(
+        need(values$db2_condition != "", "Please select Condition Groups")
+      )
+      validate(
+        need(values$db2_age != "", "Please select Age Group")
+      )
+      validate(
+        need(values$db2_state != "", "Please select States")
+      )
       args <- list(
         condition_covi_cleaned,
         values$db2_date,
@@ -711,29 +789,29 @@ server <- function(input, output){
       )
       do.call(db2_bar_fun, args)
     })
-    
+
     # Dataset 3 Variables
     values$db3_date <- input$db3_date
     values$db3_state <- input$db3_state
     values$db3_choice <- input$db3_choice
-    
+
     # Dataset 3 KPI
     values$db3_kpi <- db3_kpi_fun(covi_data_cleaned_visual, values$db3_date, values$db3_state)
-    
+
     output$db3_kpi_1 <- renderValueBox({
       valueBox(
         paste(values$db3_kpi[1], "%"), "COVID-19 Confirmed Cases Rate", icon = icon("head-side-mask"),
-        color = "yellow"
+        color = "purple"
       )
     })
-    
+
     output$db3_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$db3_kpi[2], "%"), "COVID-19 Deaths Rate", icon = icon("face-dizzy"),
         color = "yellow"
       )
     })
-    
+
     # Dataset 3 Map
     output$db3_map <- renderPlotly({
       args <- list(
@@ -743,7 +821,7 @@ server <- function(input, output){
       )
       do.call(db3_map_fun, args)
     })
-    
+
     # Dataset 3 Heat Map
     output$db3_heat <- renderPlot({
       args <- list(
@@ -753,71 +831,101 @@ server <- function(input, output){
       )
       do.call(db3_heat_fun, args)
     })
-    
-    
+
+
     # Dataset 3 Time Series
-    output$db3_ts <- renderPlotly({
+    output$db3_ts <- renderPlot({
       args <- list(
         covi_data_cleaned_model,
         values$db3_date,
         values$db3_state,
         values$db3_choice
       )
-      
+
       do.call(db3_ts_fun, args)
     })
-    
+
     # Prediction Variables
     values$pred_state <- input$pred_state
-    
+
     # Prediction KPI
 
     values$pred_kpi <- pred_kpi_fun(covi_data_new, values$pred_state)
-    
+
     output$pred_kpi_3 <- renderValueBox({
       valueBox(
         paste(values$pred_kpi[1]), "Sum of COVID-19 Cases for Future 100 Days", icon = icon("viruses"),
         color = "yellow"
       )
     })
-    
+
     output$pred_kpi_1 <- renderValueBox({
       valueBox(
         paste(values$pred_kpi[2]), "Updated New Case 2022/10/17", icon = icon("download"),
-        color = "yellow"
+        color = "purple"
       )
     })
-    
+
     output$pred_kpi_2 <- renderValueBox({
       valueBox(
         paste(values$pred_kpi[3]), "COVID-19 Cases after 100 Days 2023/01/25", icon = icon("arrow-right"),
-        color = "yellow"
+        color = "aqua"
       )
     })
-    
 
-    
+
+
     # Prediction Plot
     output$pred_line <- renderPlot({
       args <- list(
         covi_data_new,
         values$pred_state
       )
-      
+
       do.call(pred_line_fun, args)
-    })   
-    
+    })
+
   })
-  
-  
-  
+
+
+  ## INTRO BOX
+  ### https://github.com/ceefluz/radar
+  observeEvent("", {
+    showModal(modalDialog(
+      includeHTML("www/data/intro_text.html"),
+      easyClose = TRUE,
+      footer = tagList(
+        column(
+          12,
+          actionButton(inputId = "intro", label = "Sure! Give me a tour!", icon = icon("check")),
+          align = "center"
+        )
+      )
+    ))
+  })
+
+  observeEvent(input$intro,{
+    removeModal()
+  })
+
+  # show intro tour
+  observeEvent(input$intro,
+               introjs(session, options = list("nextLabel" = "Next",
+                                               "prevLabel" = "Previous",
+                                               "doneLabel" = "Alright. Let's go"))
+  )
+
+
+
+
   # output$aaa <- renderPrint({
   #   # covi_data_cleaned_visual %>% filter(number_type == "tot_cases")
   #   # values$db2_age
   #   values$db3_choice == "Cases"
   # })
-  
+
 }
+
 
 
 

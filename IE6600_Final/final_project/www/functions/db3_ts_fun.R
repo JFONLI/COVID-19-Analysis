@@ -43,6 +43,6 @@ db3_ts_fun <- function(db, date_range, states, case_choice) {
       axis.title.y.left = element_text(color = "#0073b7")
     )
   
-  ggplotly(p)
+  p
 
 }

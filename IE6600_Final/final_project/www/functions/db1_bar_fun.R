@@ -23,9 +23,10 @@ db1_bar_fun <- function(loli, date_range, sex_choices, race_choices, age_choices
   shades <- colorRampPalette(c("#0f5e9c", "#2389da", "#1ca3ec", "#5abcd8", "#74ccf4"))(10)
   shades <- rev(shades)
   
-  ggplot(loli) +
-    geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill") +
-    scale_fill_manual(values = shades) + 
+  loli_sum <- loli %>% group_by(age_group, diseases) %>% summarise(deaths = sum(deaths))
+  
+  ggplot(loli_sum) +
+    geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill", alpha = 0.5) + 
     theme(
       axis.title = element_blank(),
       axis.text = element_blank(),
@@ -36,5 +37,20 @@ db1_bar_fun <- function(loli, date_range, sex_choices, race_choices, age_choices
       panel.border = element_blank(),
       panel.background = element_blank()
     )
+  
+  
+  # ggplot(loli) +
+  #   geom_col(aes(y = deaths, x = diseases, fill = age_group), position = "fill") 
+    # scale_fill_manual(values = shades) + 
+    # theme(
+    #   axis.title = element_blank(),
+    #   axis.text = element_blank(),
+    #   axis.ticks.x = element_blank(),
+    #   axis.ticks.y = element_blank(),
+    #   panel.grid.major = element_blank(),
+    #   panel.grid.minor = element_blank(),
+    #   panel.border = element_blank(),
+    #   panel.background = element_blank()
+    # )
 }
 

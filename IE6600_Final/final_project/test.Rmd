@@ -4,7 +4,6 @@ author: "Yen-Fong Li"
 date: "2022-12-05"
 output: pdf_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -23,6 +22,7 @@ library(dplyr)
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
+
 library(usmap)
 library(plotly)
 library(corrplot)
@@ -34,6 +34,55 @@ library(ggpubr)
 library(ggrepel)
 library(GGally)
 library(plotly)
+
+ dashboardHeader(
+    title = span(img(src = "radar.svg", height = 35), "RadaR"),
+    titleWidth = 300,
+    dropdownMenu(
+      type = "notifications", 
+      headerText = strong("HELP"), 
+      icon = icon("question"), 
+      badgeStatus = NULL,
+      notificationItem(
+        text = (steps$text[1]),
+        icon = icon("spinner")
+      ),
+      notificationItem(
+        text = steps$text[2],
+        icon = icon("address-card")
+      ),
+      notificationItem(
+        text = steps$text[3],
+        icon = icon("calendar")
+      ),
+      notificationItem(
+        text = steps$text[4],
+        icon = icon("user-md")
+      ),
+      notificationItem(
+        text = steps$text[5],
+        icon = icon("ambulance")
+      ),
+      notificationItem(
+        text = steps$text[6],
+        icon = icon("flask")
+      ),
+      notificationItem(
+        text = strong(steps$text[7]),
+        icon = icon("exclamation")
+      )
+    ),
+    tags$li(
+      a(
+        strong("ABOUT RadaR"),
+        height = 40,
+        href = "https://github.com/ceefluz/radar/blob/master/README.md",
+        title = "",
+        target = "_blank"
+      ),
+      class = "dropdown"
+    )
+  ),
 
 # install.packages("rcorr")
 ```
@@ -79,6 +128,14 @@ count_death_cleaned_visual_2
 db1_age_groups <- as.character(unique(count_death_cleaned_model$age_group))
 db1_age_groups                               
 ```
+
+```{r}
+ts <- count_death_cleaned_visual_2
+ts <- ts %>% group_by(date_start, disease_type) %>% summarise(deaths = sum(death_by_disease))
+ggplot(ts) +
+  geom_line(aes(x = date_start, y = deaths, color = disease_type))
+```
+
 
 # KPI Card
 ```{r}
@@ -295,18 +352,36 @@ loli$diseases <- ordered(loli$diseases, levels = new_order)
 
 shades <- colorRampPalette(c("#0f5e9c", "#2389da", "#1ca3ec", "#5abcd8", "#74ccf4"))(10)
 shades <- rev(shades)
+loli$age_group <- as.character(loli$age_group)
+loli$diseases <- as.character(loli$diseases)
+sum(loli$deaths < 0)
+loli$age_group %>% unique()
+
+# loli<- loli %>% filter(age_group == "0-4 years")
+loli$deaths
+
+library(ggridges)
+loli$age_group %>% unique
+loli$age_group[loli$age_group == "0-4 years"] <- "0-4"
+loli$age_group %>% unique
+loli
+
+loli_sum <- loli %>% group_by(age_group, diseases) %>% summarise(deaths = sum(deaths))
+loli_sum
+
+ggplot(loli_sum) +
+  geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill", alpha = 0.5) 
+
 
 ggplot(loli) +
-  geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill") +
+  geom_col(aes(y = deaths, x = diseases, fill = age_group), alpha = 0.5) 
   scale_fill_manual(values = shades) + 
   theme(
     axis.title = element_blank(),
     axis.text = element_blank(),
     axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.grid.minor = element_blank()
   )
 
 ```
@@ -521,8 +596,8 @@ loli <- loli %>% mutate("date" = make_date(year = year, month = month))
 loli <- loli %>% filter(state == "California")
 loli <- subset(loli, select = c("date", "condition_group", "age_group", "covi_death"))
 ## Here loli filter by date
-age_choices <- c("0-24")
-loli <- loli %>% filter(age_group %in% age_choices)
+# age_choices <- c("0-24")
+# loli <- loli %>% filter(age_group %in% age_choices)
 
 loli_plot1 <- loli %>% group_by(condition_group) %>% summarise(total_deaths <- sum(covi_death))
 
@@ -566,6 +641,7 @@ ggplot(loli_plot1, aes(x = percent_100, y = reorder(condition_group, percent_100
 
 # loli <- loli %>% filter(!age_group %in% c("Not stated", "All Ages"))
 loli$condition_group <- ordered(loli$condition_group, levels = new_order)
+max(loli$deaths)
 
 ggplot(loli) +
   geom_col(aes(x = deaths, y = condition_group, fill = age_group), position = "fill") +

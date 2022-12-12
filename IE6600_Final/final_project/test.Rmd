@@ -129,9 +129,29 @@ db1_age_groups <- as.character(unique(count_death_cleaned_model$age_group))
 db1_age_groups                               
 ```
 
+## TS 
 ```{r}
 ts <- count_death_cleaned_visual_2
+ts$disease_type %>% unique()
+
+#  [1] "Alzheimer disease (G30)"                                                                          
+#  [2] "Cerebrovascular diseases (I60-I69)"                                                               
+#  [3] "Chronic lower respiratory diseases (J40-J47)"                                                     
+#  [4] "COVID-19 (U071, Underlying Cause of Death)"                                                       
+#  [5] "Diabetes mellitus (E10-E14)"                                                                      
+#  [6] "Diseases of heart (I00-I09,I11,I13,I20-I51)"                                                      
+#  [7] "Influenza and pneumonia (J09-J18)"                                                                
+#  [8] "Malignant neoplasms (C00-C97)"                                                                    
+#  [9] "Nephritis, nephrotic syndrome and nephrosis (N00-N07,N17-N19,N25-N27)"                            
+# [10] "Other diseases of respiratory system (J00-J06,J30-J39,J67,J70-J98)"                               
+# [11] "Septicemia (A40-A41)"                                                                             
+# [12] "Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R00-R99)"
+
 ts <- ts %>% group_by(date_start, disease_type) %>% summarise(deaths = sum(death_by_disease))
+
+ts$disease_type <- gsub(".*\\(", "", ts$disease_type)
+ts$disease_type <- paste0("(", ts$disease_type)
+
 ggplot(ts) +
   geom_line(aes(x = date_start, y = deaths, color = disease_type))
 ```
@@ -350,31 +370,11 @@ new_order <- loli_plot1$diseases
 
 loli$diseases <- ordered(loli$diseases, levels = new_order)
 
-shades <- colorRampPalette(c("#0f5e9c", "#2389da", "#1ca3ec", "#5abcd8", "#74ccf4"))(10)
+shades <- colorRampPalette(c("#605CA8", "#00C0EF", "#F39C11"))(10)
 shades <- rev(shades)
-loli$age_group <- as.character(loli$age_group)
-loli$diseases <- as.character(loli$diseases)
-sum(loli$deaths < 0)
-loli$age_group %>% unique()
-
-# loli<- loli %>% filter(age_group == "0-4 years")
-loli$deaths
-
-library(ggridges)
-loli$age_group %>% unique
-loli$age_group[loli$age_group == "0-4 years"] <- "0-4"
-loli$age_group %>% unique
-loli
-
-loli_sum <- loli %>% group_by(age_group, diseases) %>% summarise(deaths = sum(deaths))
-loli_sum
-
-ggplot(loli_sum) +
-  geom_col(aes(x = deaths, y = diseases, fill = age_group), position = "fill", alpha = 0.5) 
-
 
 ggplot(loli) +
-  geom_col(aes(y = deaths, x = diseases, fill = age_group), alpha = 0.5) 
+  geom_col(aes(x = deaths, y = diseases, fill = age_group),position = "fill") +
   scale_fill_manual(values = shades) + 
   theme(
     axis.title = element_blank(),
@@ -420,7 +420,7 @@ sizes
 ## Import Dataset
 ```{r}
 condition_covi_cleaned <- readRDS("www/data/condition_covi_cleaned.RDS")
-condition_covi_cleaned$state %>% unique()
+condition_covi_cleaned$condition_group %>% unique()
 ```
 # KPI Card
 ```{r}

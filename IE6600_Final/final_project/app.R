@@ -75,7 +75,6 @@ covi_data_new = covi_data_new[order(covi_data_new$state),]
 stateList = c(unique(covi_data_new['state']))
 stateList = stateList[[1]]
 
-# intro <- read_csv2("www/data/intro.csv")
 
 
 # Source helper functions -----
@@ -111,13 +110,67 @@ ui <- dashboardPage(
   dashboardHeader(
     title = span(img(src = "icon11.png", height = 35), "COVID-19 SUMMARY"),
     titleWidth = 300,
+    tags$li(
+      class = "dropdown",
+      tags$button(
+        id = "help_button",
+        class="btn-primary",
+        icon("question"),
+        style = "margin-top: 12px;"
+      )
+    ),
     dropdownMenu(
       type = "notifications", 
       headerText = strong("CODE DICTIONARY"), 
       icon = icon("circle-info"), 
       badgeStatus = NULL,
       notificationItem(
-        text = "(I00-I09)"
+        icon = icon("book"),
+        text = "COVID-19 (U071, Underlying Cause of Death)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Septicemia (A40-A41)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Maligant neoplasms (C00-C97)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Diabetes mellitus (E10-E14)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Alzheimer disease (G30)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Diseases of heart (I00-I09,I11,I13,I20-I51)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Cerebrovascular diseases (I60-I69)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Other diseases of Respiratory system (J00-J06,J30-J39,J67,J70-J98)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Influenza and pneumonia (J09-J18)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Chronic lower respiratory (J40-J47)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Nephritis (N00-N07,N17-N19,N25-N27)"
+      ),
+      notificationItem(
+        icon = icon("book"),
+        text = "Symtoms signs (R00-R99)"
       )
     )
   ),
@@ -202,12 +255,12 @@ ui <- dashboardPage(
 
         )
       ), 
-     data.step = 1, data.intro = "intro$text[1]"),
+     data.step = 1, data.intro = "Select the filter you want HERE"),
 
     div(
       id = "db2_ui",
       sidebarMenu(
-        # HTML('<br><center><img src="filter.png" width ="100"></center>'),
+        HTML('<br><center><img src="filter.png" width ="100"></center>'),
         menuItem(
           "Date",
           icon = icon("calendar"),
@@ -400,7 +453,7 @@ ui <- dashboardPage(
 
 
       ),
-  data.step = 2, data.intro = "intro$text[2]"),
+  data.step = 2, data.intro = "Select the dataset HERE"),
 
 
     br(),
@@ -432,7 +485,7 @@ ui <- dashboardPage(
           valueBoxOutput("db1_kpi_2"),
           valueBoxOutput("db1_kpi_3")
         ),
-      data.step = 3, data.intro = "intro$text[3]"),
+      data.step = 3, data.intro = "KPI Cards"),
       introBox(
         fluidRow(
           box(
@@ -447,11 +500,11 @@ ui <- dashboardPage(
             )
           )
         ),
-       data.step = 4, data.intro = "intro$text[4]"),
+       data.step = 4, data.intro = "Data Visualization"),
         fluidRow(
           box(
             width = 4,
-            title = "Correlation Relationship between All Underlying Health Conditions and Covid 19",
+            title = "Correlation Relationship between All Underlying Health Conditions and COVID-19",
             status = "primary",
             solidHeader = TRUE,
             collapsible = TRUE,
@@ -480,7 +533,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 6,
-          title = "Top Covid-19 Deaths by US States",
+          title = "Top COVID-19 Deaths by US States",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -488,7 +541,7 @@ ui <- dashboardPage(
         ),
         box(
           width = 6,
-          title = "Covid-19 Death Trends by Year & Underlying Health Conditions",
+          title = "COVID-19 Death Trends by Year & Underlying Health Conditions",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -498,7 +551,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 12,
-          title = "Top Underlying Health Conditions from Covid-19 Deaths between Healthy & Unhealthy People ",
+          title = "Top Underlying Health Conditions from COVID-19 Deaths between Healthy & Unhealthy People ",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -519,7 +572,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 6,
-          title = "Top Covid-19 Confirmed Cases by US States",
+          title = "Top COVID-19 Confirmed Cases & Deaths by US States",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -527,7 +580,7 @@ ui <- dashboardPage(
         ),
         box(
           width = 6,
-          title = "Covid-19 Confirmed Cases vs Death Cases",
+          title = "COVID-19 Confirmed Cases vs Death Cases",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -537,7 +590,7 @@ ui <- dashboardPage(
       fluidRow(
         box(
           width = 12,
-          title = "Covid-19 New Confirmed Cases and New Deaths Variation by Seasonss",
+          title = "COVID-19 New Confirmed Cases and New Deaths Variation by Seasonss",
           status = "primary",
           solidHeader = TRUE,
           collapsible = TRUE,
@@ -652,6 +705,15 @@ server <- function(input, output, session){
 
     # Dataset 1 Correlation Map
     output$db1_cor <- renderPlot({
+      validate(
+        need(values$db1_sex != "", "Please select Sex")
+      )
+      validate(
+        need(values$db1_race != "", "Please select Race")
+      )
+      validate(
+        need(values$db1_age != "", "Please select Age Groups")
+      )
       args <- list(
         count_death_cleaned_model,
         values$db1_sex,
@@ -663,6 +725,15 @@ server <- function(input, output, session){
 
     # Dataset 1 Time Series
     output$db1_ts <- renderPlotly({
+      validate(
+        need(values$db1_sex != "", "Please select Sex")
+      )
+      validate(
+        need(values$db1_race != "", "Please select Race")
+      )
+      validate(
+        need(values$db1_age != "", "Please select Age Groups")
+      )
       args <- list(
         count_death_cleaned_visual_2,
         values$db1_date,
@@ -675,6 +746,15 @@ server <- function(input, output, session){
 
     # Dataset 1 Loliplot & BarPlot
     output$db1_loli <- renderPlot({
+      validate(
+        need(values$db1_sex != "", "Please select Sex")
+      )
+      validate(
+        need(values$db1_race != "", "Please select Race")
+      )
+      validate(
+        need(values$db1_age != "", "Please select Age Groups")
+      )
       args <- list(
         count_death_cleaned_visual_2,
         values$db1_date,
@@ -686,6 +766,15 @@ server <- function(input, output, session){
     })
 
     output$db1_bar <- renderPlot({
+      validate(
+        need(values$db1_sex != "", "Please select Sex")
+      )
+      validate(
+        need(values$db1_race != "", "Please select Race")
+      )
+      validate(
+        need(values$db1_age != "", "Please select Age Groups")
+      )
       args <- list(
         count_death_cleaned_visual_2,
         values$db1_date,
@@ -743,9 +832,6 @@ server <- function(input, output, session){
     # Dataset 2 Time Series
     output$db2_ts <- renderPlotly({
       validate(
-        need(values$db2_condition != "", "Please select Condition Groups")
-      )
-      validate(
         need(values$db2_age != "", "Please select Age Group")
       )
       validate(
@@ -763,9 +849,6 @@ server <- function(input, output, session){
     # Dataset 2 Loliplot & Barplot
     output$db2_loli <- renderPlot({
       validate(
-        need(values$db2_condition != "", "Please select Condition Groups")
-      )
-      validate(
         need(values$db2_age != "", "Please select Age Group")
       )
       validate(
@@ -781,6 +864,12 @@ server <- function(input, output, session){
     })
 
     output$db2_bar <- renderPlot({
+      validate(
+        need(values$db2_age != "", "Please select Age Group")
+      )
+      validate(
+        need(values$db2_state != "", "Please select States")
+      )
       args <- list(
         condition_covi_cleaned,
         values$db2_date,
@@ -824,6 +913,9 @@ server <- function(input, output, session){
 
     # Dataset 3 Heat Map
     output$db3_heat <- renderPlot({
+      validate(
+        need(values$db3_state != "", "Please select States")
+      )
       args <- list(
         covi_data_cleaned_model,
         values$db3_state <- input$db3_state,
@@ -835,13 +927,15 @@ server <- function(input, output, session){
 
     # Dataset 3 Time Series
     output$db3_ts <- renderPlot({
+      validate(
+        need(values$db3_state != "", "Please select States")
+      )
       args <- list(
         covi_data_cleaned_model,
         values$db3_date,
         values$db3_state,
         values$db3_choice
       )
-
       do.call(db3_ts_fun, args)
     })
 
@@ -910,10 +1004,25 @@ server <- function(input, output, session){
 
   # show intro tour
   observeEvent(input$intro,
-               introjs(session, options = list("nextLabel" = "Next",
-                                               "prevLabel" = "Previous",
-                                               "doneLabel" = "Alright. Let's go"))
+     introjs(session, options = list(
+        "nextLabel" = "Next",
+        "prevLabel" = "Previous",
+        "doneLabel" = "Got it!"
+        )
+      )
   )
+  
+  
+  observeEvent(input$help_button,{
+    shinyjs::hide("db1_ui")
+    shinyjs::hide("db1_panel")
+    shinyjs::hide("db2_ui")
+    shinyjs::hide("db2_panel")
+    shinyjs::hide("db3_ui")
+    shinyjs::hide("db3_panel")
+    shinyjs::hide("pred_ui")
+    shinyjs::hide("pred_panel")
+  })
 
 
 

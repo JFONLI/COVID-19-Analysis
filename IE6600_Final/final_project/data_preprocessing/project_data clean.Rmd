@@ -1,0 +1,980 @@
+---
+title: "project"
+date: "2022-11-04"
+---
+
+# Step 1: Collect data
+## Load data and preparation
+```{r}
+
+rm(list=ls())
+
+library(tidyverse)
+library(lubridate)
+
+count_death=read_csv('./dataset/count_death.csv')
+condition_covi=read_csv('./dataset/conditon_covi.csv')
+covi_data=read_csv('./dataset/covi_data.csv')
+```
+
+# Step 2: Access data
+
+## 2.1 Access table count_death.csv
+### 2.1.1 Explore data 
+```{r}
+# have a look at the structure of dataset
+count_death %>% 
+  str()
+
+# what's the character columns ?
+count_death %>% select(., where(is.character))
+
+# What values are included in column Sex. It seems that there is data value issue in this column. 
+count_death %>% distinct(., Sex)
+
+# What are the columns whose name contains 'date' ?
+count_death %>% select(., contains('date'))
+
+#Are the data type of these columns Date ? Unfortunately, they are not date variable. 
+count_death %>% 
+  select(., contains('date') & where(is.Date))
+  
+# what's the year information ? 
+count_death %>% 
+  select(., `Date Of Death Year`) %>% 
+  unique()
+
+# are information for Year 2020 cover all months ? Yes all months are included for Year 2020
+count_death %>% 
+  filter(., `Date Of Death Year`==2020) %>% 
+  distinct(., `Date Of Death Month`)
+
+# is categorical column a factor ? No, none of the columns are factors.
+count_death %>% select(., where(is.factor))
+
+# which columns are related to COVID-19 ?
+count_death %>% select(., contains('covid'))
+```
+Finding:
+
+
+### 2.1.2 Further explore with Questions
+
+#### Q1 Investigate Column 10-24
+
+if column 10(AllCause) is sum of column 11(Natural Cause)-24 ?
+```{r}
+# sum all number from column 12 to 22
+sum_columns = count_death %>% 
+  select(., 11:22) %>% 
+  rowwise() %>% 
+  summarise(., total=sum(c_across(everything())))
+
+# compare the sum with column 10
+sum_columns %>% head(11)
+count_death[10] %>% head(11)
+```
+The result up to now is wired.
+- column 10 is not sum of column 11-22; In some cases, the sum of column 11-24 may be larger than, equal or smaller than column 10.
+- Thus, we can conclude that one person may die of more than one causes
+
+What are the relationship of these columns ?
+
+After looking at https://zh.wikipedia.org/zh-tw/ICD-10, we can find that Natural Causes contains several causes. Let's verify it.
+```{r}
+# sum all values from column 12 to 22
+sum_columns = count_death %>% 
+  select(., 12:22) %>% 
+  rowwise() %>% 
+  summarise(., total=sum(c_across(everything())))
+
+# take subtract of AllCause and sum of 12 to 22
+rss_1 = count_death$AllCause - sum_columns$total
+
+# are all values >= 0 ? The answer is yes. Sum of 12 to 22 are always <= AllCause
+(rss_1 >= 0) %>% all()
+
+# take subtract of column 11(Natural cause) and sum of 12 to 22
+rss_2 = count_death$AllCause - sum_columns$total
+
+# are all values >= 0 ? The answer is yes. Sum of 12 to 22 are always <= AllCause
+(rss_2 >= 0) %>% all()
+```
+The above results show that AllCause and Natural Cause are always greater than sum of column 11-22. 
+
+What if we take column 23 and 24 into consideration ?
+```{r}
+# sum all values from column 12 to 24
+sum_columns = count_death %>% 
+  select(., 12:24) %>% 
+  rowwise() %>% 
+  summarise(., total=sum(c_across(everything())))
+
+# take subtract of AllCause and sum of 12 to 24
+rss_3 = count_death$AllCause - sum_columns$total
+
+# are all values >= 0 ? The answer is false.
+(rss_3 >= 0) %>% all()
+
+# how many values in rss_3<0 ? ans is 1791645
+sum(rss_3)
+
+# take subtract of column 11(Natural cause) and sum of 12 to 24
+rss_4 = count_death$NaturalCause - sum_columns$total
+
+# are all values >= 0 ? The answer is false.
+(rss_4 >= 0) %>% all()
+
+# how many values in rss_4<0 ? ans is 1060595
+sum(rss_4)
+```
+The above code shows that is we take sum of 12 to 24, the conclusion does not apply
+
+#### Q2: What's the relation between column 23 and 24 ? 
+
+Let's further investigate column 23 and 24
+```{r}
+# what's the difference between these two columns ? All values in column 23 is larger than 24
+count_death %>% 
+  transmute(., 
+            sub=`COVID-19 (U071, Multiple Cause of Death)`- `COVID-19 (U071, Underlying Cause of Death)` ) %>% 
+  filter(., sub<0)
+```
+It shows that column 23 (mutilple cause) are always greater than column 24(Underlying cause)
+
+What about sum of column 12 to 23?
+```{r}
+# sum all values from column 12 to 23
+sum_columns = count_death %>% 
+  select(., 12:23) %>% 
+  rowwise() %>% 
+  summarise(., total=sum(c_across(everything())))
+
+# take subtract of AllCause and sum of 12 to 23
+rss_5 = count_death$AllCause - sum_columns$total
+
+# are all values >= 0 ? The answer is false.
+(rss_5 >= 0) %>% all()
+
+# which is <0 ? ans is 2663
+which(rss_5<0)
+
+# take subtract of column 11(Natural cause) and sum of 12 to 23
+rss_6 = count_death$AllCause - sum_columns$total
+
+
+# are all values >= 0 ? The answer is false.
+(rss_6 >= 0) %>% all()
+
+# which is <0 ? ans is 2663
+which(rss_6<0)
+```
+The above result show that sum of column 12 to 23 is less than AllCauses and Naturalcause except for row 2663. It may be a data collection problem. 
+
+What about column 12 to 22 and 24 ?
+```{r}
+# sum all values from column 12 to 22 and 24
+sum_columns = count_death %>% 
+  select(., 12:22, 24) %>% 
+  rowwise() %>% 
+  summarise(., total=sum(c_across(everything())))
+
+# take subtract of AllCause and sum of 12 to 23
+
+rss_7 = count_death$AllCause - sum_columns$total
+
+# take subtract of NaturalCause and sum of 12 to 23
+rss_8 = count_death$NaturalCause - sum_columns$total
+
+
+# are all values >= 0 ? The answer is True.
+(rss_7 >= 0) %>% all()
+(rss_8 >= 0) %>% all()
+
+```
+The above code shows that, column 12-22 and 24 are counted in Natural Cause and All Cause.
+
+We also find more definition of Natural Cause of death:
+  - https://en.wikipedia.org/wiki/Manner_of_death
+
+In conclusion, we will consider Covid19 Undelying as a part of Natural Cause of death. 
+
+### 2.1.3 Data Issues to be solved
+
+Through the above exploration, we have found the following data cleaning and tidiness issues. We will fix them in Step 3.
+
+1. Redundant column
+The following columns are redundant, and we will drop them.
+    - Column 'AnalysisDate'
+    - Column 'Jurisdiciton of Occurrence'
+
+2. Data type problem 1
+The following column's datatype should be datetime.
+    - Column 'Start Date'
+    - Column 'End Date'
+    
+3. Data type problem 2
+The following column's datatype should be factor.
+    - Column 'Sex'
+    - Column 'Race/Ethnicity'
+    - Column 'AgeGroup'
+
+4. Factor level problems:
+    - In Column 'Sex', there are 4 unique values, which are 'M', 'F', 'Male' and 'Female'. 
+    - We will merge old levels 'M' and 'Male' to new level 'male', while old levels 'F' and 'Female' to new level 'female'.
+    
+5. Mutate new columns: row-wise difference and rowwise-division  
+    - We will mutate a new column named 'cause_other', where its value is the row-wise difference between column 'AllCause' and column 'NaturalCause'. 
+    - The meaning of column 'cause_other' is the total number of death contributed by causes with ICD-10 code S00-U99(for example, car accidents, homocide, special purpose)
+    - We will mutate a new column named 'percent_covi', where its value is the rowise division between column 'COVID-19 (U071, Underlying Cause of Death)' and column 'cause_other'. 
+    - The meaning of column 'percent_covi' is the percentage of total number of death caused by covid-19 among totla number of death lead by causes with ICD-10 code S00-U99. 
+    
+6. Column names and order problems:
+    - We will replace the space in column names with underscore.
+    - We will convert all Upper-case letters to lower-case.
+    - We will rename some column names to make their meaning clear. 
+    - We will rearrange the order of some columns. 
+
+7. Reshape table: pivot_longer the following columns
+    - Column 'cause_oth', 'all cause' and 'Natural cause' should be values of a new column 'cause_type'. 
+    - The columns related to specific disease(e.g. 'Septicemia (A40-A41)', 'Diabetes mellitus (E10-E14)') should be values of a column named 'cause_by_disease'.
+    
+
+
+
+## 2.2 Access table condition_covi_deaths.csv
+
+### 2.2.1 Explore dataset
+```{r}
+condition_covi %>% colnames()
+condition_covi %>% str()
+
+# which columns contain numeric values ?
+condition_covi %>% select(., where(is.numeric))
+
+# is column Month all NA ?
+condition_covi$Month %>% is.na() %>% all()
+
+# display all non-NA in column Month, and find that only rows have time span of 1 month has NA value
+condition_covi %>% filter(., !is.na(Month))
+
+# what's the value for column Year for the above result ? 2020 2021 2022
+condition_covi %>% 
+  filter(., !is.na(Month)) %>%
+  .$Year %>% unique()
+
+# what's the column 'By Total' ?
+condition_covi %>% distinct(., Group)
+
+# what's the column 'State'? 
+# Ans: There are 54 unique values. The unique values are the 50 states of USA and special regions like puerto rico and district of Columbia. There is another special which is United States, which is the sum of all regions/states. 
+unique_state=condition_covi %>% 
+  distinct(., State)
+condition_covi %>% 
+  filter(., State=='United States') %>% 
+  distinct(., Group)
+
+# unique values of column Condition Group. There are 12 unique values.
+condition_covi %>% distinct(., `Condition Group`)
+
+# unique values of column Condition. There are 23 unique values. 
+condition_covi %>% distinct(., Condition)
+
+# What's the relation between column `Condition Group` and Condition ? We can observe that one `Condition Group` may correspond to several values of Condition. 
+condition_covi %>% distinct(., `Condition Group`, Condition)
+condition_covi %>% 
+  filter(., `Condition Group`=='Respiratory diseases') %>% 
+  distinct(., Condition)
+
+# what's the unique value of column 'Age Group'
+condition_covi %>% distinct(., `Age Group`)
+
+```
+### 2.2.2 Further explore with Questions 
+
+#### Q: What's the meaning of By Total, By Year and By Month
+Column Group has 3 unique values which are 'By Total', 'By Year' and 'By Month'. What's their meaning ?
+```{r}
+# What's the meaning of By Total, By Year and By Month ?
+condition_covi %>% 
+  filter(., Group=='By Total') %>% 
+  distinct(., `Start Date`, `End Date` )
+condition_covi %>% 
+  filter(., Group=='By Year') %>% 
+  distinct(., `Start Date`, `End Date` )
+condition_covi %>% 
+  filter(., Group=='By Month') %>% 
+  distinct(., `Start Date`, `End Date` )
+
+```
+We can find that 
+  - if Group=='By Total', then the time period of study starts from 01/01/2020 and end on 10/29/2022
+  - if Group=='By Year', then the time periods of study may be one of 01/01/2020 to 12/31/2020, 01/01/2021 to 12/31/2021, and 01/01/2022 to 10/29/2022
+  - if Group=='By Month', then the time periods of study are from the 1st day of each month to the last day of each month. There are total 34 months, from Jan of 2020 to Oct of 2022.
+  
+### 2.2.3 Data Issues to be solved
+
+Through the above exploration, we have found the following data cleaning and tidiness issues. We will fix them in Step 3.
+
+1. Redundant column
+The following columns are redundant, and we will drop them.
+    - Column 'Data As Of'
+    - Column 'Start Date'
+    - Column 'End Date'
+
+2. Data type problem 1
+The following column's datatype should be integer.
+    - Column 'COVID-19 Deaths'
+    - Column 'Number of Mentions'
+    - Column 'Year'
+    - Column 'Month'
+
+3. Data type problem 2
+The following column's datatype should be factor.
+    - Column 'State'
+    - Column 'Condition Group'
+    - Column 'Condition' 
+    - Column 'ICD10_codes'
+    - Column 'Age Group'
+    
+4. Column name problems:
+    - We will replace the space in column names with underscore.
+    - We will convert all Upper-case letters to lower-case.
+    - We will rename some column names to make their meaning clear. 
+
+## 2.3 Access table covi_data.csv
+### 2.3.1 Explore dataset
+```{r}
+
+```
+
+### 2.3.2 Further explore with Questions
+
+#### Q: What state are included in the study ?
+```{r}
+# what states are included in the column 'state'
+state_covi_data = covi_data$state %>% 
+  unique() %>% 
+  sort()
+
+# How many states are in total ? The answer is 60.
+state_covi_data %>% length()
+
+```
+We find there are 60 different states in total, which is not the same as the number of states as of common knowledge.
+
+After further study, we found the following regions/territories are also included in column 'state'.
+    - 51 states and DC
+    - 1 city: The New York City.  
+    - 5 US's overseas territories: U.S. territories of American Samoa, Guam, the Commonwealth of the Northern Mariana Islands, Puerto Rico, and the U.S Virgin Islands
+    - 3 independent countries in compacts of free association with the United States, Federated States of Micronesia, Republic of the Marshall Islands, and Republic of Palau.(https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36)
+    
+#### Q: What's information can column 'submission_date' tell us ?
+before further investigate, we must transfer data type, extract month and year information
+```{r}
+library(lubridate)
+
+# transform, extract date and year
+covi_data1 = covi_data %>%  
+  mutate(., 
+         date=mdy(submission_date),
+         month=month(date),
+         year=year(date),
+         day=day(date),
+         .before=1,
+         .keep='unused')
+
+# make covi_data1 arranged by state, year, month, date, 
+covi_data1_1 = covi_data1 %>% 
+  arrange(., state, year, month, day)
+```
+continue exploring after date cleaning 
+```{r}
+# how many times a state submit cases ? Take AK as an example. The answer is 1001.  
+covi_data1 %>% 
+  filter(., state=='AK') %>% 
+  arrange(., date)
+
+# Does each state has 1001 rows ? All states have 1001 rows. 
+covi_data1 %>% 
+  count(., state)
+
+# It seems that a state submit everyday. Let's check it.The result shows every day has occurred 60 times. 
+covi_data1 %>% count(., date)
+
+# Are there 60 values in Column States ? The answer is yes. 
+covi_data1$state %>% unique()
+```
+#### Q: What's the meaning of negative values ?
+Let's first have a look at negative values
+```{r}
+# are there negative values ? Choose rows with negative values and arrange by state, year, month, day
+covi_data_neg=covi_data1 %>% 
+  filter(if_any(.fns=~.<0)) %>% 
+  arrange(., state, year, month, day)
+```
+We found the following information from neg_data:
+
+1. fact 1:
+    - look at row 3 and row 4, where date=2020-08-15, and date=2020-08-16, state==AR
+    - in row 3,  tot_case=51992
+    - in row 4, tot_case=52665, new_case=673, 
+    - we can verify tot_case(row4) =  tot_case(row3) + new_case(row4)
+2. fact 2: 
+    - look at row 74 and row 75, where date=2021-04-03 and date=2021-04-04, state==AZ
+    - in row 74, tot_death=16991
+    - in row 75, tot_death=16990, new_death=-1
+    - we can verify tot_death(row75) = new_death(row75) + tot_death(row74)
+  
+3. conclusion: 
+    - Thus we can say, the negative values in numeric columns are not data reporting problems. It may because of that some previously reported cases/death are now proven to be wrong. 
+
+#### Q: What's the meaning of NA values ? 
+How many NA are in each state for columns related to COVI-19 data ?
+note: theses columns contains '_' and are numeric type
+```{r}
+# calculate number of NA in columns by state
+covi_data_NA=
+  covi_data1 %>% 
+  group_by(., state) %>% 
+  summarise(., 
+            across(
+              where(is.numeric) & contains('_'), 
+              function(x) sum(is.na(x)), 
+              .names='{.col}_NA')
+           )
+
+# Which column has no NA-value among all states ? 
+covi_data_NA %>% 
+  select(., 
+         where(~ is.numeric(.x) && sum(.x) == 0))
+
+# Whats states have 1001 NA values in any column ?
+covi_data_NA %>% filter(., 
+                        if_any(everything(), ~. == 1001 ))
+                        
+# What states have less than 1001 NA values ?
+covi_data_NA %>% filter(., 
+                        if_any(everything(), ~. < 1001 ))
+
+# Let's have a look at column 'pnew_case' and state AK. There are only 2 unique values: NA and 0. 
+covi_data1_1 %>% 
+  filter(., state == 'AK') %>% 
+  distinct(., pnew_case)
+  
+```
+Findings:
+    - Column 'tot_cases', 'new_case', 'tot_death', 'new_death' do not contain NA values
+    - Some states have 1001 NA values in one column 'conf_case', meaning that they do not report such data to ICDC
+    - Some states have less than 1001 NA values, meaning that they do not report such data at the beginning, but started to report later. 
+
+#### Q: What's the states having least total number of cases throughout the study ?
+We summarize and take sum after grouping by state, and them look at the last 10 values.
+```{r}
+# summarize and sum by state, followed by displaying the last 10 minimum values.
+covi_data1 %>%
+  group_by(., state) %>% 
+  summarise(., 
+            across(
+              c(tot_cases, new_case, tot_death, new_death),
+              sum,
+              .names = "sum_{.col}")
+            ) %>% 
+  slice_min(., sum_tot_cases, n=10)
+```
+
+
+### 2.3.3 Data Issues to be solved
+
+1. Redundant columns
+The following columns are redundant
+    - 'created_at'
+    - 'consent_cases'
+    - 'consent_deaths'
+
+2. Abbreviations should be replaced with full name
+    - Values in column 'state' are abbreviations. We will replace them with full names.
+    
+3. Data type problems :
+    - column 'State' should be factor type
+    - column 'submission_date' should be date type
+    - column 4-12 should be integer type
+
+4. Mutating and extracting required
+We will extract year, month and data from column 'submission_date', and form them into 3 separate columns
+
+5. Row orders problems
+All the rows are not ordered in neither state nor submitted date. We will re-order all rows according to state and date. 
+
+6. Column order problems
+Some columns contain NA values while some do not. We will re-arrange column orders by moving the  columns not having NA values to the front. 
+
+7. Data Reshaping required
+columns 'tot_cases', 'new_case', 'tot_death', 'new_death' should be values of a variable. We will pivot these columns. 
+ 
+
+# Step 3: Clean and Transform Data
+
+## 3.1 Table count_death.csv
+
+Based on the Data issues mentioned in section 2.1.3, we will perform data cleaning and transformation as follows. 
+
+### 3.1.1 Drop redundant columns
+
+drop Column 'AnalysisDate' and Column 'Jurisdiciton of Occurrence'
+```{r}
+# drop columns using select
+count_death_c1 = count_death %>% 
+  select(., -c(AnalysisDate, `Jurisdiction of Occurrence`))
+```
+
+### 3.1.2 Fix Data type problem 1
+
+Convert The following column's datatype to datetime.
+    - Column 'Start Date'
+    - Column 'End Date'
+```{r}
+# convert data types
+count_death_c2 = count_death_c1 %>% 
+  mutate(., 
+         across(c(`Start Date`, `End Date`), mdy))
+
+# check data type has been converted to date. 
+count_death_c2 %>% select(., contains('date') & where(is.Date))
+```
+    
+### 3.1.3 Fix Data type problem 2
+
+Convert the following column's datatype to factor.
+    - Column 'Sex'
+    - Column 'Race/Ethnicity'
+    - Column 'AgeGroup'
+```{r}
+# convert data type
+count_death_c3 = count_death_c2 %>% 
+  mutate(., 
+         across(c(Sex, `Race/Ethnicity`, AgeGroup), as.factor))
+
+# check data type has been converted to factor.
+count_death_c3 %>% select(., where(is.factor))
+```
+
+### 3.1.4 Merge Factor levels in column 'Sex'
+
+Merge old levels 'M' and 'Male' to new level 'male', while old levels 'F' and 'Female' to new level 'female'
+```{r}
+# merge old levels to new levels
+count_death_c4 = count_death_c3 %>% 
+  mutate(., 
+         Sex = fct_collapse(Sex, 
+                            male=c('M', 'Male'),
+                            female=c('F', 'Female')))
+
+# check new levels, which should only contains 'male' and 'female'
+count_death_c4$Sex %>% levels()
+```
+
+### 3.1.5 Mutate by row-wise difference and division
+
+mutate new column 'cause_other' by row-wise difference: 'AllCause' - 'NaturalCause'
+```{r}
+# mutate new column 'cause_other'
+count_death_c5 = count_death_c4 %>% 
+  rowwise() %>% 
+  mutate(., cause_other = AllCause - NaturalCause)
+
+# check the new column after transformation
+count_death_c5 %>% select(., AllCause, NaturalCause, cause_other)
+```
+compare value of column 'cause_other' and column 'COVID-19 (U071, Underlying Cause of Death)'
+```{r}
+count_death_c5 %>% 
+  filter(., cause_other < `COVID-19 (U071, Underlying Cause of Death)`) %>% 
+  select(., cause_other, `COVID-19 (U071, Underlying Cause of Death)`)
+```
+We can find that there are many columns where the value of column 
+'COVID-19 (U071, Underlying Cause of Death)' is larger than column 'cause_other'. Thus, we can say the death of COVID-19 is counted as natural causes.
+
+Mutate new column 'percent_covi' by row-wise division: 'COVID-19 (U071, Underlying Cause of Death)' / 'AllCause'
+```{r}
+# mutate new column 'percent_covi'
+count_death_c5 = count_death_c5 %>% 
+  rowwise() %>% 
+  mutate(., percent_covi = 
+           `COVID-19 (U071, Underlying Cause of Death)` / AllCause) %>% 
+  ungroup()
+
+# check the new column after transformation
+count_death_c5 %>% select(., `COVID-19 (U071, Underlying Cause of Death)`, 
+                          percent_covi,
+                          AllCause)
+
+# let's have a look at which group has the largest value of percentage of death due to COVID-19
+count_death_c5 %>% 
+  arrange(., desc(percent_covi)) %>% 
+  select(., Sex, `Race/Ethnicity`, AgeGroup, percent_covi)
+```
+### 3.1.6 Rename and Re-locate columns
+change column names and the order of columns
+```{r}
+# rename column names
+count_death_c6 = rename(count_death_c5, 
+                        year_death = `Date Of Death Year`,
+                        month_death = `Date Of Death Month`,
+                        date_start = `Start Date`, 
+                        date_end = `End Date`,
+                        sex = Sex,
+                        race = `Race/Ethnicity`,
+                        age_group = AgeGroup , 
+                        cause_all = AllCause, 
+                        cause_natural = NaturalCause)
+
+# check column names
+count_death_c6 %>% colnames()
+
+# re-locate columns
+count_death_c6 =  count_death_c6 %>% 
+  relocate(.,  cause_other, .after=cause_natural) %>% 
+  relocate(., percent_covi, .after=cause_other) %>% 
+  relocate(., `COVID-19 (U071, Multiple Cause of Death)`, .after=last_col())
+
+# check column order
+count_death_c6 %>% colnames()
+```
+
+### 3.1.7 Reshape table by pivot_longer
+
+pivot columns 'cause_all', 'cause_natural' and 'cause_oth'
+```{r}
+# pivot columns
+count_death_c7_1 = pivot_longer(count_death_c6, 
+                              cols=matches('^cause_\\w'),
+                              names_to='cause_type',
+                              values_to = 'death_by_cause')
+
+# check new columns
+count_death_c7_1 %>% select(., cause_type, death_by_cause)
+```
+
+pivot disease-related columns 
+  - Note: Be careful with the index of columns to be pivoted. To avoid wrong index, indexing using column names is recommended. 
+```{r}
+# pivot columns
+count_death_c7_2 = pivot_longer(count_death_c6,
+                              col=`Septicemia (A40-A41)`: `COVID-19 (U071, Underlying Cause of Death)`,
+                              names_to = 'disease_type',
+                              values_to = 'death_by_disease')
+
+# check new column
+count_death_c7_2 %>% distinct(., disease_type)
+
+# move column `COVID-19 (U071, Multiple Cause of Death)` to the last column
+count_death_c7_2 = count_death_c7_2 %>% 
+  relocate(., `COVID-19 (U071, Multiple Cause of Death)`, .after=last_col())
+
+# final check column name and order
+count_death_c7_2 %>% colnames()
+```
+
+## 3.2 Table condition_covi_death.csv
+
+### 3.2.1 Drop redundant columns
+Drop the following columns: 'Data As Of', 'Start Date', 'End Date'
+```{r}
+# drop columns
+condition_covi_c1 = condition_covi %>% 
+  select(., -c(`Data As Of`, `Start Date`, `End Date`))
+
+# check columns
+condition_covi_c1 %>% colnames()
+```
+
+### 3.2.2 Fix Data type problem 1 and 2
+Convert the datatype of following columns to integer
+    - Column 'COVID-19 Deaths'
+    - Column 'Number of Mentions'
+    - Column 'Year'
+    - Column 'Month'
+Convert the datatype of following columns to factor
+    - Column 'State'
+    - Column 'Condition Group'
+    - Column 'Condition' 
+    - Column 'ICD10_codes'
+    - Column 'Age Group'
+```{r}
+# convert date type
+condition_covi_c2 = condition_covi_c1 %>% 
+  mutate(., 
+         across(
+           where(is.numeric), as.integer),
+         across(
+           c(State, `Condition Group`, Condition, ICD10_codes, `Age Group`), as.factor))
+
+# check data type
+condition_covi_c2 %>% select(., where(is.integer))
+condition_covi_c2 %>% select(., where(is.factor))
+```
+
+### 3.2.3 Rename columns names
+Rename columns by:
+    - replace space with underscore
+    - convert upper-case to lower-case
+    - rename with meaningful name
+```{r}
+# change column names to lower-case, and replace space with underscore
+condition_covi_c3 = condition_covi_c2 %>% 
+  rename_with(., 
+              .fn = ~ tolower(gsub(" ", "_", .x, fixed = TRUE)),
+              .cols = everything())
+
+# manually change some column names to make following analysis convinent
+condition_covi_c3 = condition_covi_c3 %>% 
+  rename(.,
+         covi_death=`covid-19_deaths`)
+
+# check column names
+condition_covi_c3 %>% colnames()
+```
+
+
+
+## 3.3 Table covi_data.csv
+
+1. Redundant columns
+The following columns are redundant
+  - 'created_at'
+  - 'consent_cases'
+  - 'consent_deaths'
+  
+### 3.3.1 Drop redundant columns
+The following columns will be droped
+  - 'created_at'
+  - 'consent_cases'
+  - 'consent_deaths'
+```{r}
+# drop columns 
+covi_data_c1 = covi_data %>% 
+  select(., -c(created_at, consent_cases, consent_deaths))
+
+# check columns
+covi_data_c1 %>% colnames()
+```
+
+### 3.3.2 Replace abbr. with full name
+we will replace abbr. of state name in column 'state' with the full name.
+
+Fist define a function to replace a string of abbr. name to full name
+```{r}
+
+# string vector of all abbr. of state 
+abbr_all_states =  c("AL","AK", "AZ", "KS", "UT", "CO", "CT",
+             "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", 
+             "AR", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+             "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
+             "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", 
+             "SC", "SD", "TN", "TX", "CA", "VT", "VA", "WA", 
+             "WV", "WI", "WY", "DC", "NYC",
+             "AS", "GU", "MP", "PR", "VI", "FSM", "PW", "RMI")
+
+# string vector of all full name of state
+full_all_states = c("Alabama","Alaska", "Arizona", "Kansas",
+             "Utah", "Colorado", "Connecticut",
+             "Delaware", "Florida", "Georgia",
+             "Hawaii", "Idaho", "Illinois",
+             "Indiana", "Iowa", "Arkansas",
+             "Kentucky", "Louisiana", "Maine",
+             "Maryland", "Massachusetts", "Michigan",
+             "Minnesota", "Mississippi", "Missouri",
+             "Montana", "Nebraska", "Nevada",
+             "New Hampshire", "New Jersey", "New Mexico",
+             "New York", "North Carolina", "North Dakota",
+             "Ohio", "Oklahoma", "Oregon",
+             "Pennsylvania", "Rhode Island", "South Carolina",
+             "South Dakota", "Tennessee", "Texas",
+             "California", "Vermont", "Virginia",
+             "Washington", "West Virginia", "Wisconsin",
+             "Wyoming", "District of Columbia", "New York City",
+             "American Samoa", "Guam", "Northern Mariana Islands",
+             "Puerto Rico", "U.S. Virgin Islands",
+             "Micronesia", "Palau",  "Republic of Marshall Islands")
+
+# define custom function to replace abbr. with full name
+replace_abbr_fullname = function(abbr){
+  str1 = tolower(abbr_all_states)
+  str2 = full_all_states
+  str2[match(tolower(abbr), str1)]
+}
+```
+ Now apply the custom function to covi_data_c1.csv
+```{r}
+# note that the name attributes should be removed 
+covi_data_c2 = covi_data_c1 %>% 
+  mutate(., 
+         state = sapply(state, replace_abbr_fullname),
+         state = unname(state))
+```
+ Lastly, check all states' abbr. have been converted correctly
+```{r}
+# if all states in full name have 1001 values, the return should have 0 row
+covi_data_c2 %>% 
+  count(., state) %>% 
+  filter(., n != 1001)
+
+# check if there are 60 non-NA values in column 'state' 
+covi_data_c2 %>% 
+  select(., state) %>% 
+  filter(., !is.na(state)) %>% 
+  n_distinct()
+```
+
+### 3.3.3 Fix Data type problem
+we perform the following type conversion:
+    - convert column 'state' to factor
+    - convert column 'submission_date' to date
+    - convert column 4-12 to integer
+```{r}
+# type conversion
+covi_data_c3 = covi_data_c2 %>% 
+  mutate(., 
+         state = as.factor(state),
+         submission_date = mdy(submission_date),
+         across(c(4:12), as.integer))
+
+# check data type
+covi_data_c3 %>% select(., where(is.factor))
+covi_data_c3$state %>% levels()
+covi_data_c3 %>% select(., where(is.Date))
+covi_data_c3 %>% select(., where(is.integer))
+```
+
+### 3.3.4 Extract year/month/day information 
+We extract year/month/date from column 'submission_date'
+```{r}
+# extract and mutate
+covi_data_c4 = covi_data_c3 %>%  
+  mutate(., 
+         date=submission_date,
+         month=month(date),
+         year=year(date),
+         day=day(date),
+         .before=1,
+         .keep='unused')
+
+# check columns
+covi_data_c4 %>% colnames()
+```
+### 3.3.5 Re-arrange row orders
+For the convenience of following analysis, we will re-arrange rows orders
+```{r}
+# arrange by state, year, month, date
+covi_data_c4 = covi_data_c4 %>%
+  arrange(., state, year, month, date )
+
+# have a look at first 10 rows
+covi_data_c4 %>% head(10)
+```
+
+### 3.3.6 Re-locate columns
+For the convenience of following analysis, we will re-locate columns.
+```{r}
+# Relocate columns not containing NA 
+covi_data_c4 = covi_data_c4 %>% 
+  relocate(
+    c('tot_cases', 'new_case', 'tot_death', 'new_death'),
+    .after = state)
+
+# check column orders
+covi_data_c4 %>% colnames()
+```
+
+### 3.3.7 Reshape data by pivot_longer()
+We will pivot columns 'tot_cases', 'new_case', 'tot_death', 'new_death' to a new variable
+```{r}
+# first drop columns which will not be pivoted, and then pivot
+covi_data_c5 = covi_data_c4 %>% 
+  select(., 
+         -c(conf_cases, prob_cases, pnew_case, conf_death, prob_death, pnew_death)
+         ) %>% 
+  pivot_longer(., 
+               cols = c('tot_cases', 'new_case', 'tot_death', 'new_death'),
+               names_to = 'number_type', 
+               values_to = 'number_value'
+               )
+
+# check new column
+covi_data_c5 %>% distinct(., number_type)
+```
+
+## 3.4 Finalized cleaned table
+Rename the cleaned table
+```{r}
+# cleaned table of count_death.csv for model(without pivoting)
+count_death_cleand_model = count_death_c6
+
+# cleaned table of count_death.csv for visualization(only pivoting column 'cause_all', 'cause_natural' and 'cause_oth')
+count_death_cleand_visual_1 = count_death_c7_1
+
+# cleaned table of count_death.csv for visualization(only pivoting column 'Septicemia (A40-A41)' to 'COVID-19 (U071, Underlying Cause of Death)')
+count_death_cleand_visual_2 = count_death_c7_2
+
+# cleaned table of condition_covi_death.csv
+condition_covi_cleaned = condition_covi_c3
+
+# cleaned table of covi_data.csv for model(without pivoting)
+covi_data_cleaned_model = covi_data_c4
+
+# cleaned table of covi_data.csv(with pivoting)
+covi_data_cleaned_visual = covi_data_c5
+```
+
+We write cleaned data to file using write_rds. We do not use write_csv() because it will lose the type information
+```{r}
+write_rds(count_death_cleand_model, "./dataset/count_death_cleaned_model.rds")
+write_rds(count_death_cleand_visual_1, "./dataset/count_death_cleaned_visual_1.rds")
+write_rds(count_death_cleand_visual_2, "./dataset/count_death_cleaned_visual_2.rds")
+write_rds(condition_covi_cleaned, "./dataset/condition_covi_cleaned.rds")
+write_rds(covi_data_cleaned_model, "./dataset/covi_data_cleaned_model.rds")
+write_rds(covi_data_cleaned_visual, "./dataset/covi_data_cleaned_visual.rds")
+
+```
+
+double check if the output file correctly contains type information.
+```{r}
+read_rds('./dataset/count_death_cleaned_visual_1.rds') %>% str()
+read_rds('./dataset/count_death_cleaned_visual_2.rds') %>% str()
+read_rds('./dataset/covi_data_cleaned_visual.rds') %>% str()
+read
+```
+
+# Step 4: Simple Visualization
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,14 @@
+name: COVID-19_Analysis
+title: COVID-19_Analysis
+username:
+account: jfonli
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7872310
+bundleId: 6626207
+url: https://jfonli.shinyapps.io/COVID-19_Analysis/
+when: 1670834525.97988
+lastSyncTime: 1670834525.97989
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: ARIMA Models/covi_data_ARIMA_Forecast_T+100.rds|ARIMA Models/IE 6600 - Model Plots.Rmd|ARIMA Models/IE 6600 - Time Series Modeling.Rmd|ppt.pdf

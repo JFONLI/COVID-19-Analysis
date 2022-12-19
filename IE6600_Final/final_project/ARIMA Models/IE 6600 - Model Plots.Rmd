@@ -1,0 +1,67 @@
+---
+title: "IE 6600 - ARIMA Prediction Visualization"
+author: "#Put your full name here"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# echo=T to show the code, eval=T to show the results ----
+knitr::opts_chunk$set(echo = T, eval=T) 
+# Pre-load packages ----
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(tseries)
+library(forecast)
+library(fpp2)
+library(tsbox)
+```
+
+
+## 0. Read Data
+```{r}
+### This is the forecast data
+arima_forecast = read_rds('covi_data_ARIMA_Forecast_T+100.rds')
+### This is the observation data
+covi_data = read_rds('covi_data_cleaned_model.rds')
+
+### Use a column to let you know if this specific date is forecast or observation
+arima_forecast$is_forecast = 'Y'
+covi_data$is_forecast = 'N'
+
+### Only select the columns we need
+covi_data_new = covi_data[, c('date', 'state', 'new_case', 'is_forecast')]
+```
+
+```{r}
+### Concatenate the predictions and observation
+covi_data_new = bind_rows(covi_data_new,arima_forecast)
+covi_data_new = covi_data_new[order(covi_data_new$state),]
+tail(covi_data_new, 200)
+```
+
+## 1. Visualization
+```{r}
+### Create a list that contains all states
+stateList = c(unique(covi_data_new['state']))
+stateList = stateList[[1]]
+```
+
+```{r}
+# for (i in seq_along(stateList))
+# {
+perState_covi_data = filter(covi_data_new, state == stateList[2]) ## REPLACE 'stateList[2]' WITH STATE NAME TO CHECK PLOT FOR ANOTHER STATE
+
+p <- ggplot(perState_covi_data)
+p + geom_line(data=subset(perState_covi_data, (as.Date("2022-07-01")<date) & date<as.Date("2022-10-19")), 
+              aes(date, new_case, colour="Observations"), linetype=1) + 
+  geom_line(data=subset(perState_covi_data, date>=as.Date("2022-10-19")), 
+            aes(date, new_case, colour="Predictions"), linetype=2) +
+  scale_color_manual(name = "Color", values = c("Observations" = "black", "Predictions" = "red")) + 
+  xlab("Year 2022") + 
+  ylab("Daily New Cases") + 
+  ggtitle("Predictions for Daily New Cases in the US for Future 100 Days") + 
+  theme(plot.title = element_text(hjust = 0.5))
+# }
+```
+

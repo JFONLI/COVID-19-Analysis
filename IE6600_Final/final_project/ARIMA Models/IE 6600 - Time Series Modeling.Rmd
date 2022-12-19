@@ -1,0 +1,275 @@
+---
+title: "IE 5374 - Project"
+author: "#Put your full name here"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# echo=T to show the code, eval=T to show the results ----
+knitr::opts_chunk$set(echo = T, eval=T) 
+# Pre-load packages ----
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(tseries)
+library(forecast)
+library(fpp2)
+library(tsbox)
+```
+
+
+## 0. Read Data
+```{r}
+#count_death = read_rds('count_death_cleaned_model.rds')
+#condi_covi = read_rds('condition_covi_cleaned.rds')
+covi_data = read_rds('covi_data_cleaned_model.rds')
+
+#write.csv(count_death,file='count_death.csv',fileEncoding = "UTF-8")
+#write.csv(condi_covi,file='condi_covi.csv',fileEncoding = "UTF-8")
+#write.csv(covi_data,file='covi_data.csv',fileEncoding = "UTF-8")
+```
+
+```{r}
+# Crease state list
+stateList = c(unique(covi_data['state']))
+stateList = stateList[[1]]
+```
+
+## 1. ARIMA Model
+```{r}
+#---------------------------------------
+# Filter the state
+alabama = filter(covi_data, state == stateList[1])
+# Select ts columns and transform date variable
+alabama = alabama[, c('date', 'new_case')]
+alabama$date = as.Date(alabama$date)
+# Convert dataframe to ts-dataframe
+alabama_ts <- xts(alabama$new_case, alabama$date)
+
+#---------------------------------------
+# Plot the ACF and PACF
+par(mar = c(5,5,5,5)) # set the margins
+acf(alabama_ts, main = 'ACF of Consumption Data', xlab = 'Year')
+pacf(alabama_ts, main = 'PACF of Consumption Data', xlab = 'Year') 
+#Plot the ts
+autoplot(alabama_ts) + xlab('Year') + ylab('Confirmed Cases')
+# Plot the ts with ACF and PACF
+forecast::tsdisplay(alabama_ts)
+
+#---------------------------------------
+# Check first differencing
+plot.ts(diff(alabama_ts, differences = 1))
+# Check second differencing
+plot.ts(diff(alabama_ts, differences = 2))
+# Test for stationarity using Dickey-Fuller Test
+adf.test(alabama_ts, alternative = 'stationary')
+
+#---------------------------------------
+# Build ARIMA model automatically
+fitARIMA = auto.arima(alabama_ts, seasonal = FALSE)
+fitARIMA
+# Plot forecasts
+fitARIMA %>% forecast(h = 100) %>% autoplot() + theme(plot.title = element_text(hjust = 0.5))
+# Print predictions
+fitARIMA %>% forecast(h = 100)
+# Model summary
+a=summary(fitARIMA)
+a
+```
+
+### 1.1 Generate ARIMA model predictive results for all U.S. states
+```{r}
+values = seq(from = as.Date("2022-10-19"), to = as.Date("2022-10-19")+99, by = 'day')
+forecast_results = data.frame(date = values)
+
+for (i in seq_along(stateList))
+{
+#---------------------------------------
+# Filter the state
+state = filter(covi_data, state == stateList[i])
+# Select ts columns and transform date variable
+state = state[, c('date', 'new_case')]
+state$date = as.Date(state$date)
+# Convert dataframe to ts-dataframe
+state_ts <- xts(state$new_case, state$date)
+
+#---------------------------------------
+# Build ARIMA model automatically
+fitARIMA = auto.arima(state_ts, seasonal = FALSE)
+fitARIMA
+# Plot forecasts
+fitARIMA %>% forecast(h = 100) %>% autoplot() + theme(plot.title = element_text(hjust = 0.5))
+# Print predictions
+results = fitARIMA %>% forecast(h = 100)
+
+#---------------------------------------
+# Export results
+Fcast_df <- results %>% 
+  sweep::sw_sweep(.) %>% 
+  filter(key == "forecast") %>% 
+  select(-key)
+
+Fcast_df[2][Fcast_df[2] < 0] = 0
+Fcast_df[2] = round(Fcast_df[2], digit = 0)
+names(Fcast_df)[2] = as.character(stateList[i])
+stateForecast = Fcast_df[2]
+
+forecast_results = cbind(forecast_results, stateForecast)
+}
+```
+
+#### Gather, Column to Row transformation
+```{r}
+forecast_results = forecast_results %>% gather("Alabama":"Wyoming", key="state", value="new_case")
+```
+
+#### Export Results
+```{r}
+forecast_results
+write.csv(forecast_results, "covi_data_T+100_ARIMA_Results_allStates.csv", row.names=FALSE)
+```
+
+```{r}
+forecast_results
+write_rds(forecast_results, "./covi_data_ARIMA_Forecast_T+100.rds")
+```
+
+### 1.2 Generate USA country predictions
+
+#### GROUP by date
+```{r}
+usa = covi_data %>% group_by(date) %>% summarise(new_case = sum(new_case), n_state=n())
+usa
+```
+#### Compute predictions
+```{r}
+usavalues = seq(from = as.Date("2022-10-19"), to = as.Date("2022-10-19")+99, by = 'day')
+usa_forecast_results = data.frame(date = usavalues)
+
+usa$date = as.Date(usa$date)
+# Convert dataframe to ts-dataframe
+usa_ts <- xts(usa$new_case, usa$date)
+
+#---------------------------------------
+# Build ARIMA model automatically
+fitARIMA = auto.arima(usa_ts, seasonal = FALSE)
+fitARIMA
+# Plot forecasts
+fitARIMA %>% forecast(h = 100) %>% autoplot() + theme(plot.title = element_text(hjust = 0.5))
+# Print predictions
+results = fitARIMA %>% forecast(h = 100)
+
+#---------------------------------------
+# Export results
+Fcast_df <- results %>% 
+  sweep::sw_sweep(.) %>% 
+  filter(key == "forecast") %>% 
+  select(-key)
+
+Fcast_df[2][Fcast_df[2] < 0] = 0
+Fcast_df[2] = round(Fcast_df[2], digit = 0)
+names(Fcast_df)[2] = "United States"
+usaForecast = Fcast_df[2]
+
+usa_forecast_results = cbind(usa_forecast_results, usaForecast)
+```
+
+```{r}
+#---------------------------------------
+# Plot the ACF and PACF
+par(mar = c(5,5,5,5)) # set the margins
+acf(usa_ts, main = 'ACF of USA Daily Covid Report Data', xlab = 'Lag')
+pacf(usa_ts, main = 'PACF of USA Daily Covid Report Data', xlab = 'Lag') 
+#Plot the ts
+autoplot(usa_ts) + xlab('Year') + ylab('Confirmed Cases') + 
+  ggtitle("Daily US Covid-19 New Case Report from 2020-01-22 to 2022-10-18") + theme(plot.title = element_text(hjust = 0.5))
+# Plot the ts with ACF and PACF
+forecast::tsdisplay(usa_ts)
+```
+
+```{r}
+#---------------------------------------
+# Check first differencing
+plot.ts(diff(usa_ts, differences = 1))
+# Check second differencing
+plot.ts(diff(usa_ts, differences = 2))
+# Test for stationarity using Dickey-Fuller Test
+adf.test(usa_ts, alternative = 'stationary')
+
+```
+
+
+#### Gather, Column to Row and Export Results
+```{r}
+usa_forecast_results = usa_forecast_results %>% gather("United States", key="state", value="new_case")
+write.csv(usa_forecast_results, "covi_data_T+100_ARIMA_Results_USAEntirely.csv", row.names=FALSE)
+```
+
+```{r}
+usa = usa[,c('date', 'new_case')]
+usa_forecast_results = usa_forecast_results[, c('date', 'new_case')]
+usa_total = bind_rows(usa,usa_forecast_results)
+```
+
+```{r}
+tail(usa_total)
+```
+
+```{r}
+p <- ggplot(usa_total)
+p + geom_line(data=subset(usa_total, (as.Date("2022-07-01")<date) & date<as.Date("2022-10-19")), aes(date, new_case, colour="Observations"), linetype=1) +
+    geom_line(data=subset(usa_total, date>=as.Date("2022-10-19")), aes(date, new_case, colour="Predictions"), linetype=2) +
+  scale_color_manual(name = "Color", values = c("Observations" = "black", "Predictions" = "red")) + xlab("Year 2022") + 
+  ylab("Daily New Cases") + 
+  ggtitle("Predictions for Daily New Cases in the US for Future 100 Days") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+write.csv(usa_total, "covi_data_Combined_ARIMA_Results_USAEntirely.csv", row.names=FALSE)
+```
+
+#### Generate Prediction Evaluation
+```{r}
+testdate = seq(from = as.Date("2022-10-18")-99, to = as.Date("2022-10-18"), by = 'day')
+usa_test_results = data.frame(date = testdate)
+
+test_eval = head(usa, 900)
+# Convert dataframe to ts-dataframe
+test_eval_ts <- xts(test_eval$new_case, test_eval$date)
+
+#---------------------------------------
+# # Build ARIMA model automatically
+# fitARIMA = auto.arima(usa_ts, seasonal = FALSE)
+# fitARIMA
+# # Plot forecasts
+fitARIMA %>% forecast(h = 100) %>% autoplot() + theme(plot.title = element_text(hjust = 0.5))
+# Print predictions
+results_eval = fitARIMA %>% forecast(h = 100)
+
+#---------------------------------------
+# Export results
+Fcast_eval <- results_eval %>% 
+  sweep::sw_sweep(.) %>% 
+  filter(key == "forecast") %>% 
+  select(-key)
+
+Fcast_eval[2][Fcast_eval[2] < 0] = 0
+Fcast_eval[2] = round(Fcast_eval[2], digit = 0)
+names(Fcast_eval)[2] = "Prediction"
+evalForecast = Fcast_eval[2]
+
+usa_eval_results = cbind(usa_test_results, evalForecast)
+
+```
+
+#### Generate Actual vs Observation
+```{r}
+# p <- ggplot(usa_total)
+# p + geom_line(data=subset(usa, (as.Date("2022-07-11")<= date) & date<as.Date("2022-10-19")), aes(date, new_case, colour="Observations"), linetype=1) +
+#     geom_line(data=subset(usa_eval_results, (as.Date("2022-07-11")<= date) & date<as.Date("2022-10-19")), aes(date, Prediction, colour="Predictions"), linetype=2) +
+#   scale_color_manual(name = "Color", values = c("Observations" = "black", "Predictions" = "red")) + xlab("Year 2022") + 
+#   ylab("Daily New Cases") + 
+#   ggtitle("Predictions for Daily New Cases in the US for Future 100 Days") + 
+#   theme(plot.title = element_text(hjust = 0.5))
+```
